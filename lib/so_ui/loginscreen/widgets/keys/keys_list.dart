@@ -1,0 +1,115 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sochat_client/extenstions/theme_getter.dart';
+import 'package:sochat_client/context_menu/menus.dart';
+import 'package:sochat_client/context_menu/context_manager.dart';
+import 'package:sochat_client/modules/keys/key_service.dart';
+import 'package:sochat_client/so_ui/common/input.dart';
+import 'package:sochat_client/so_ui/chatscreen/widgets/search/search_list.dart';
+import 'package:sochat_client/context_menu/context_menu.dart';
+import 'package:sochat_client/context_menu/context_menu_button.dart';
+import 'package:sochat_client/context_menu/context_window.dart';
+import 'package:sochat_client/so_ui/common/icon_button.dart';
+import 'package:sochat_client/so_ui/loginscreen/widgets/keys/selectable_button.dart';
+import 'package:sochat_client/so_ui/loginscreen/widgets/settings_button.dart';
+
+class KeysList extends ConsumerWidget  {
+
+  KeysList({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final keyService = ref.watch(keyServiceProvider);
+    final keyServiceNotifier = ref.watch(keyServiceProvider.notifier);
+    final selectedKey = ref.watch(selectedProfileProvider);
+
+    return Expanded(
+      flex: 2,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: context.colors.outline,
+            width: 1.0,
+          ),
+          color: context.colors.foreground,
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Column(
+          children: [
+            Container(
+              height: 40,
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: context.colors.outline,
+                    width: 1,
+                  ),
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              alignment: Alignment.centerLeft,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Keychain", style: Theme.of(context).textTheme.labelSmall,),
+                  Row(
+                    children: [
+                      SoIconButton(Icons.add, height: 30, width: 30, onPressed: () async {
+                        await ref.watch(keyServiceProvider.notifier).generateProfile();
+                      },),
+                      SoIconButton(Icons.edit, height: 30, width: 30, onPressed: Menus.keyEditorWindow(context, selectedKey, ref),),
+                      SoIconButton(Icons.copy, height: 30, width: 30, onPressed: () async {
+                        await Clipboard.setData(ClipboardData(text: keyServiceNotifier.toJson(selectedKey)));
+                      },),
+                      SoIconButton(Icons.paste, height: 30, width: 30, onPressed: () async {
+                        final data = await Clipboard.getData(Clipboard.kTextPlain);
+                        String text = data?.text ?? "";
+                        keyServiceNotifier.parseEntry(text);
+
+                      },),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Consumer(builder: (context, ref, _) {
+                final keyService = ref.watch(keyServiceProvider);
+                final profiles = keyService.profiles;
+
+                return ListView.separated(
+                  itemCount: profiles.length,
+                  itemBuilder: (context, index) {
+                    final profile = profiles.entries.toList()[index];
+                    final isSelected = ref.watch(selectedProfileProvider) == index;
+
+                    return SelectableButton(
+                      size: 40,
+                      profile.key,
+                      "",
+                      isSelected: isSelected,
+                      onPressed: () {
+                        ref.read(selectedProfileProvider.notifier).state = index;
+                      },
+
+                      menuItems: Menus.keysListContext(context, index, ref,  profile),
+
+                      onSecondaryTap: (details) {
+                        showContextMenu(context, details.globalPosition,
+                            items: Menus.keysListContext(context, index, ref,  profile),
+                            ref);
+                      },
+                    );
+                  },
+                  separatorBuilder: (_, __) => const SizedBox(height: 4),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

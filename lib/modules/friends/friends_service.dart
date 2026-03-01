@@ -1,0 +1,253 @@
+import 'dart:convert';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:sochat_client/modules/friends/friendship.dart';
+import 'package:sochat_client/modules/websocket/message_packet.dart';
+import 'package:sochat_client/modules/users/user.dart';
+import 'package:sochat_client/modules/common/auth_service.dart';
+import 'package:sochat_client/modules/keys/key_service.dart';
+import 'package:sochat_client/modules/websocket/web_socket_service.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+final friendsServiceProvider = StateNotifierProvider<FriendsService, FriendsState>(
+      (ref) => FriendsService(ref.read(webSocketProvider), ref.read(keyServiceProvider.notifier), ref.read(authServiceProvider), ref),);
+
+final friendsListProvider = Provider<List<User>>((ref) {
+  final friendships = ref.watch(friendsServiceProvider).friendships;
+  final currentUser = ref.watch(authServiceProvider).currentUser;
+
+  return friendships.values
+      .where((r) => r.status == FriendshipStatus.ACCEPTED)
+      .map((r) {
+    if (r.user.id == currentUser?.id) {
+      return r.friend;
+    } else {
+      return r.user;
+    }
+  })
+      .toList();
+});
+
+final blockedListProvider = Provider<List<User>>((ref) {
+  final friendships = ref.watch(friendsServiceProvider).friendships;
+  final currentUser = ref.watch(authServiceProvider).currentUser;
+
+  return friendships.values
+      .where((r) => r.status == FriendshipStatus.BLOCKED)
+      .map((r) => r.user.id == currentUser?.id ? r.friend : r.user)
+      .toList();
+});
+
+final outgoingRequestsProvider = Provider<List<User>>((ref) {
+  final friendships = ref.watch(friendsServiceProvider).friendships;
+  final currentUser = ref.watch(authServiceProvider).currentUser;
+
+  return friendships.values
+      .where((f) => f.isOutgoing(currentUser!.id))
+      .map((f) => f.getOtherUser(currentUser!.id))
+      .toList();
+});
+
+final incomingRequestsProvider = Provider<List<User>>((ref) {
+  final friendships = ref.watch(friendsServiceProvider).friendships;
+  final currentUser = ref.watch(authServiceProvider).currentUser;
+
+  return friendships.values
+      .where((f) => f.isIncoming(currentUser!.id))
+      .map((f) => f.getOtherUser(currentUser!.id))
+      .toList();
+});
+
+
+
+class FriendsState {
+  final Map<String, Friendship> friendships;
+
+  FriendsState({
+    required this.friendships,
+  });
+
+  FriendsState copyWith({
+    Map<String, Friendship>? friendships,
+  }) {
+    return FriendsState(
+      friendships: friendships ?? this.friendships,
+    );
+  }
+}
+
+
+
+
+class FriendsService extends StateNotifier<FriendsState>{
+  final WebSocketService _webSocket;
+  final KeyService _keyService;
+  final AuthService _authService;
+
+  Ref ref;
+
+  FriendsService(this._webSocket, this._keyService, this._authService, this.ref)
+      : super(FriendsState(friendships: {})) {
+    startListen();
+  }
+
+  Map<String, Friendship> get friendships =>
+      state.friendships;
+
+  void startListen(){
+    _webSocket.friendsMessages.listen((message) {
+      switch(message.type) {
+        case ("authenticate"):
+          getRelativesList();
+          break;
+        case ("friend_request"):
+          {
+            receiveFriendRequest(message);
+          }
+        case ("friend_accept"):
+          {
+            receiveFriendAccept(message);
+          }
+        case ("friend_remove"):
+        case ("friend_decline"):
+          {
+            receiveFriendRemove(message);
+            break;
+          }
+
+        case ("blockUser"):
+          {
+            var userMap = jsonDecode(message.payload["user"]) as Map<String, dynamic>;
+            remove(userMap["username"].toString());
+            break;
+          }
+      }
+    });
+  }
+
+  void remove(String username) {
+    final newMap = {...friendships};
+
+    final keyToRemove = newMap.keys.firstWhere(
+          (key) => key == username,
+      orElse: () => "",
+    );
+
+    if (keyToRemove.isNotEmpty) {
+      newMap.remove(keyToRemove);
+      state = state.copyWith(friendships: newMap);
+    }
+  }
+
+  void addUpdate(Friendship friendship){
+    final key = friendship.user.id == _authService.currentUser?.id
+        ? friendship.friend.username
+        : friendship.user.username;
+
+    state = state.copyWith(
+      friendships: {
+        ...friendships,
+        key: friendship,
+      },
+    );
+  }
+
+  void getRelativesList() async {
+    MessagePacket message = MessagePacket(type: "relatives_list", payload: {});
+    MessagePacket request = await _webSocket.sendRequest(message);
+
+    List<dynamic> friendshipList = jsonDecode(request.payload["friendship_list"] as String);
+    for (var f in friendshipList) {
+      final user = f['user'];
+      final friend = f['friend'];
+      final status = f['status'];
+      Friendship friendship = Friendship(user: User(id: user["id"], username: user["username"]),
+          friend: User(id: friend["id"], username: friend["username"]), status: FriendshipStatus.values.byName(status));
+      addUpdate(friendship);
+    }
+  }
+
+  void sendFriendRequest(String username) async {
+    MessagePacket message = MessagePacket(type: "friend_request", payload: {
+      "username": username,
+      "fingerprint": await _keyService.generateFingerprint(),
+    });
+    MessagePacket request = await _webSocket.sendRequest(message);
+    receiveFriendRequest(request);
+  }
+
+  void acceptFriendRequest(String username) async{
+    MessagePacket message = MessagePacket(type: "friend_accept", payload: {
+      "username": username,
+      "fingerprint": await _keyService.generateFingerprint(),
+    });
+    MessagePacket request = await _webSocket.sendRequest(message);
+    receiveFriendAccept(request);
+  }
+
+  void declineFriendRequest(String username) async{
+    MessagePacket message = MessagePacket(type: "friend_decline", payload: {
+      "username": username,
+    });
+    MessagePacket request = await _webSocket.sendRequest(message);
+    receiveFriendRemove(request);
+  }
+
+  void removeFriend(String username) async{
+    MessagePacket message = MessagePacket(type: "friend_remove", payload: {
+      "username": username,
+    });
+    MessagePacket request = await _webSocket.sendRequest(message);
+    receiveFriendRemove(request);
+  }
+
+  void blockUser(String username) async{
+    MessagePacket message = MessagePacket(type: "block", payload: {
+      "username": username,
+    });
+    MessagePacket request = await _webSocket.sendRequest(message);
+    var blockedMap = jsonDecode(request.payload["blocked"]) as Map<String, dynamic>;
+    remove(blockedMap["username"].toString());
+  }
+
+
+  void receiveFriendRequest(MessagePacket message){
+    var friendshipMap = jsonDecode(message.payload["friendship"]) as Map<String, dynamic>;
+    var userMap = friendshipMap["user"] as Map<String, dynamic>;
+    var friendMap = friendshipMap["friend"] as Map<String, dynamic>;
+
+    Friendship friendship = Friendship(user: User(id: userMap["id"], username: userMap["username"]),
+        friend: User(id: friendMap["id"], username: friendMap["username"]),
+        status: FriendshipStatus.PENDING);
+
+    addUpdate(friendship);
+  }
+
+  void receiveFriendAccept(MessagePacket message){
+    var friendshipMap = jsonDecode(message.payload["friendship"]) as Map<String, dynamic>;
+    var userMap = friendshipMap["user"] as Map<String, dynamic>;
+    var friendMap = friendshipMap["friend"] as Map<String, dynamic>;
+
+    if (message.payload["success"] != null) {
+      Friendship? friendship1 = friendships[userMap["username"].toString()];
+      friendship1!.status = FriendshipStatus.ACCEPTED;
+      addUpdate(friendship1);
+    }
+    else{
+      Friendship? friendship1 = friendships[friendMap["username"].toString()];
+      friendship1!.status = FriendshipStatus.ACCEPTED;
+      addUpdate(friendship1);
+    }
+  }
+
+  void receiveFriendRemove(MessagePacket message){
+    {
+      var removedMap = jsonDecode(message.payload["user"]) as Map<String, dynamic>;
+      var userMap = jsonDecode(message.payload["removed"]) as Map<String, dynamic>;
+      remove(removedMap["username"].toString());
+      remove(userMap["username"].toString());
+    }
+  }
+
+}
