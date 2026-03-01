@@ -1,16 +1,44 @@
-# sochat client
+# SoChat Client 
 
-Project for testing design in my upcoming app
+``` Make your own messanger! ```
 
-## Getting Started
+Eng: __SoChat enables users to create and manage their own messaging server for private text and voice communication, giving them full control over customization and security!__
 
-This project is a starting point for a Flutter application.
+Rus: __SoChat позволяет пользователям создавать и управлять собственным сервером для обмена текстовыми и голосовыми сообщениями, предоставляя им полный контроль над настройкой и безопасностью!__
 
-A few resources to get you started if this is your first Flutter project:
+[**Made for SoChat Server / Сделано для SoChat Server**](https://github.com/yomirein/SoChatServer)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## IT STILL WORK IN PROGRESS / ПОКА В РАЗРАБОТКЕ
+What was done / Что было сделано:
+| Fully done | Currently working on | Needs polishing | Not done |
+| -- | -- | --| -- |
+| 🟩 | 🟧 | 🟨 | 🟥 |
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+| Feature   | Completion |
+| ---------- | ----- |
+| Ecnrypting | 🟩 |
+| Authorization   | 🟨 |
+| Friendships | 🟨 |
+| Private Chats | 🟨 |
+| P2P Voice calls | 🟧 |
+| Group chats | 🟥 |
+| Group voice calls | 🟥 |
+| CDN Server | 🟥 |
+| Auto setting server on first start | 🟥 |
+
+
+
+## Libraries used in project / Библиотеки использованные в проекте
+
+| Library   | Version |
+| ---------- | ----- |
+| encrypt   | 5.0.3 |
+| fast_rsa(WILL BE DELETED) | 3.8.6 |
+| flutter_riverpod | 3.2.1 |
+| http | 1.6.0 |
+| cryptography | 2.9.0 |
+| web_socket_channel | 3.0.3 |
+
+Eng: I'm currently working on it as a college project, and it will continue if people show interest after first working release.
+
+Rus: Сейчас я это делаю как проект для колледжа, но я продолжу его разрабатывать если люди покажут интерес после первого рабочего релиза
