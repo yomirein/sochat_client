@@ -28,11 +28,12 @@ class CallWindow extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Column(
+            spacing: 8,
             children: [
               Row(
                 spacing: 10,
                 children: [
-                  SoIconButton(Icons.arrow_back, height: 30, width: 30,  color: Colors.transparent, onPressed: () {},),
+                  SoIconButton(Icons.arrow_back, height: 30, width: 30,  color: Colors.transparent, onPressed: () {ref.read(isInCallProvider.notifier).state = false;},),
                   CircleAvatar(radius: 20, child: Text("S")),
                   Text("silver")
                 ],
@@ -48,13 +49,18 @@ class CallWindow extends ConsumerWidget {
                   ],
                 ),
               ),
+
               Flexible(
                 flex: 1,
                 child: Row(
+                  spacing: 8,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SoIconButton(Icons.call_end, height: 60, width: 75,  color: context.colors.critical, onPressed: () {},),
 
+                    SoIconButton(Icons.screen_share_outlined, height: 50, width: 50,  color: context.colors.surface, onPressed: () {},),
+                    SoIconButton(Icons.videocam_rounded, height: 50, width: 50,  color: context.colors.surface, onPressed: () {},),
+                    SoIconButton(Icons.mic, height: 50, width: 50,  color: context.colors.surface, onPressed: () {},),
+                    SoIconButton(Icons.call_end, height: 50, width: 50,  color: context.colors.critical, onPressed: () {},),
                   ],
                 ),
               )

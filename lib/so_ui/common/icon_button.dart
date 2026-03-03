@@ -6,10 +6,11 @@ import 'package:sochat_client/extenstions/theme_getter.dart';
 
 class SoIconButton extends ConsumerWidget {
 
-  SoIconButton(this.icon, {super.key, required this.height, required this.width, this.onPressed, this.color});
+  SoIconButton(this.icon, {super.key, required this.height, required this.width, this.onPressed, this.color, this.iconSize = 25});
   final IconData icon;
   double height;
   double width;
+  final double iconSize;
   final VoidCallback? onPressed;
 
   Color? color;
@@ -28,7 +29,7 @@ class SoIconButton extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
           onTap: onPressed,
-          child: Icon(icon, color: context.colors.textPrimary, size: height/1.5),
+          child: Icon(icon, color: context.colors.textPrimary, size: iconSize),
         ),
       ),
     );

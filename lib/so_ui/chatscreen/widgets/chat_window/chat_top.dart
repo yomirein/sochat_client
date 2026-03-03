@@ -55,7 +55,7 @@ class ChatTop extends ConsumerWidget {
                     color: context.colors.foreground,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(10),
-                      onTap: () { ref.read(isInCallProvider.notifier).state = true; print("set true");},
+                      onTap: () { ref.read(isInCallProvider.notifier).state = true; },
                       child: Icon(Icons.call),
                     ),
                   ),
