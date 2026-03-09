@@ -30,23 +30,23 @@ class ChatWindow extends ConsumerWidget {
           color: context.colors.foreground,
           borderRadius: BorderRadius.circular(10.0),
         ),
-        child: selectedChat != null
-            ? (isInCall
-            ? Column(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            CallWindow()
-          ],
-        ): Column(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ChatTop(),
-            Container(child: MessageList()),
-            InputField()
-          ],
-        )): Column(children: [],)
+          child: selectedChat != null
+              ? (isInCall
+              ? Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              CallWindow()
+            ],
+          ): Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ChatTop(),
+              Container(child: MessageList()),
+              InputField()
+            ],
+          )): Column(children: [],)
       ),
     );
   }

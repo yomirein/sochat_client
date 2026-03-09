@@ -37,8 +37,6 @@ class SoChat extends ConsumerWidget {
         splashFactory: NoSplash.splashFactory,
         highlightColor: colors.contrastColor.withOpacity(0.10),
 
-
-
         colorScheme: ColorScheme.light(
           primary: colors.primary,
         ),

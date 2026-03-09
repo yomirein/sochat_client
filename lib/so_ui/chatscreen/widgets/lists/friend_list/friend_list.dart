@@ -38,19 +38,19 @@ class FriendList extends ConsumerWidget {
             child: ListView(
               children: [
                 ...friendRelativesList.map((e) => FriendItem(
-                  nickname: e.username,
+                  user: e,
                 )),
 
                 ...incomingRelativesList.map((e) => IncomingFriendItem(
-                  nickname: e.username,
+                  user: e,
                 )),
 
                 ...outgoingRelativesList.map((e) => OutgoingFriendItem(
-                  nickname: e.username,
+                  user: e,
                 )),
 
                 ...blockedRelativesList.map((e) => FriendItem(
-                  nickname: e.username,
+                  user: e,
                 )),
               ],
             ),

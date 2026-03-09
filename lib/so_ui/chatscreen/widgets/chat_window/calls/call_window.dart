@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/so_ui/chatscreen/widgets/chat_window/calls/user_in_call.dart';
-import 'package:sochat_client/so_ui/common/icon_button.dart';
+import 'package:sochat_client/so_ui/common/so_button.dart';
 
 import '../../../../../so_ux/chatscreen/chat_controller.dart';
 
@@ -33,7 +33,8 @@ class CallWindow extends ConsumerWidget {
               Row(
                 spacing: 10,
                 children: [
-                  SoIconButton(Icons.arrow_back, height: 30, width: 30,  color: Colors.transparent, onPressed: () {ref.read(isInCallProvider.notifier).state = false;},),
+                  SoButton(height: 30, width: 30,  color: Colors.transparent, onPressed: () {ref.read(isInCallProvider.notifier).state = false;},
+                    child: Icon(Icons.arrow_back, color: context.colors.textPrimary, size: 25),),
                   CircleAvatar(radius: 20, child: Text("S")),
                   Text("silver")
                 ],
@@ -57,10 +58,10 @@ class CallWindow extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
 
-                    SoIconButton(Icons.screen_share_outlined, height: 50, width: 50,  color: context.colors.surface, onPressed: () {},),
-                    SoIconButton(Icons.videocam_rounded, height: 50, width: 50,  color: context.colors.surface, onPressed: () {},),
-                    SoIconButton(Icons.mic, height: 50, width: 50,  color: context.colors.surface, onPressed: () {},),
-                    SoIconButton(Icons.call_end, height: 50, width: 50,  color: context.colors.critical, onPressed: () {},),
+                    SoButton(height: 50, width: 50,  color: context.colors.surface, onPressed: () {}, child: Icon(Icons.screen_share_outlined, color: context.colors.textPrimary, size: 25),),
+                    SoButton(height: 50, width: 50,  color: context.colors.surface, onPressed: () {}, child: Icon(Icons.videocam_rounded, color: context.colors.textPrimary, size: 25),),
+                    SoButton(height: 50, width: 50,  color: context.colors.surface, onPressed: () {}, child: Icon(Icons.mic, color: context.colors.textPrimary, size: 25),),
+                    SoButton(height: 50, width: 50,  color: context.colors.critical, onPressed: () {}, child: Icon(Icons.call_end, color: context.colors.textPrimary, size: 25),),
                   ],
                 ),
               )

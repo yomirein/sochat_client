@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:sochat_client/context_menu/menus.dart';
+import 'package:sochat_client/modules/chats/chat_service.dart';
 import 'package:sochat_client/modules/common/auth_service.dart';
 import 'package:sochat_client/modules/friends/friends_service.dart';
 import 'package:sochat_client/modules/websocket/web_socket_service.dart';
@@ -18,6 +19,8 @@ import 'package:sochat_client/context_menu/context_window.dart';
 import 'package:sochat_client/context_menu/context_menu_button.dart';
 
 import 'package:sochat_client/context_menu/context_menu.dart';
+import 'package:sochat_client/so_ui/loginscreen/widgets/keys/keys_button.dart';
+import 'package:sochat_client/so_ux/chatscreen/chat_controller.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -31,10 +34,22 @@ final activeList = StateProvider<int>((ref) => 0);
 class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
+  void initState() {
+
+    final chatController = ref.read(chatControllerProvider.notifier);
+    chatController.getChatList();
+    chatController.getFriendsList();
+
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authService = ref.watch(authServiceProvider);
     final webSocketService = ref.watch(webSocketProvider);
     final active = ref.watch(activeList);
+
+    final chatController = ref.watch(chatControllerProvider.notifier);
 
     final blockedRelativesList = ref.watch(blockedListProvider);
     final friendRelativesList = ref.watch(friendsListProvider);
@@ -54,9 +69,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   spacing: 10,
                   children: [
                     TopButton(Icons.sms, onPressed: () { ref.read(activeList.notifier).state = 0; },),
-                    TopButton(Icons.person_search, onPressed: () { ref.read(activeList.notifier).state = 1; },),
+                    TopButton(Icons.person, onPressed: () { ref.read(activeList.notifier).state = 1; },),
                     TopButton(Icons.settings, onPressed: () { ref.read(activeList.notifier).state = 2; },),
-                  ],
+                    ],
                 ),
                 Expanded(child: Container()),
                 Expanded(flex: 4, child: SearchButton(

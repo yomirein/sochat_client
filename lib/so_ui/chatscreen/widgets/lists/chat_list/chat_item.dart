@@ -6,17 +6,18 @@ import 'package:sochat_client/context_menu/context_menu.dart';
 import 'package:sochat_client/extenstions/hex_color.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/context_menu/context_menu_button.dart';
+import 'package:sochat_client/modules/chats/chat.dart';
 
 class ChatItem extends ConsumerWidget {
   ChatItem({
     super.key,
-    required this.nickname,
+    required this.chat,
     this.lastMessage = "",
     this.description = "",
     this.onPressed,
   });
 
-  final String nickname;
+  final Chat chat;
   String lastMessage = "";
   String description = "";
   GestureTapCallback? onPressed;
@@ -32,21 +33,21 @@ class ChatItem extends ConsumerWidget {
           borderRadius: BorderRadius.circular(10),
           onTap: onPressed,
           onSecondaryTapDown: (details) {
-            List<ContextMenuButton> menuItems = Menus.userContext(context, ref, nickname, description);
+            List<ContextMenuButton> menuItems = Menus.userContext(context, ref, chat, description);
             showContextMenu(context, details.globalPosition, items: menuItems, ref);
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
             child: Row(
               children: [
-                CircleAvatar(radius: 25, child: Text(nickname[0])),
+                CircleAvatar(radius: 25, child: Text(chat.title[0])),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        nickname,
+                        chat.title,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                         style: Theme.of(context).textTheme.titleMedium,

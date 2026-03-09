@@ -49,8 +49,7 @@ class LoginWidget extends ConsumerWidget {
                     keyService.profiles.entries.toList()[ref.read(selectedProfileProvider)].value,
                     keyService.servers.entries.toList()[ref.read(selectedServerProvider)].value);
               }),
-              LoginButton(text: "Test User Profile", color: context.colors.critical, onTap: Menus.userProfile(context, ref)),
-              Row(
+    Row(
                 children: [
                   LoginButton(text: "Kafka", color: context.colors.critical, onTap: () async {
                     _usernameController.text = "kafka";
@@ -69,7 +68,14 @@ class LoginWidget extends ConsumerWidget {
                         keyService.profiles.entries.toList()[ref.read(selectedProfileProvider)].value,
                         keyService.servers.entries.toList()[ref.read(selectedServerProvider)].value, ref);
                   }),
-                  
+                  LoginButton(text: "hero", color: context.colors.critical, onTap: () {
+                    _usernameController.text = "hero";
+                    ref.read(keyServiceProvider.notifier).parseEntry('{"profile2":{"ed25519publicKey":"d7u94NKVtO7vk/llLvMw+sLkTprYE1fIcq6WoDcgTQ4=","ed25519privateKey":"kcVXn/UNBwz0GcnT5idmFkL60FobvugpB5exYDQh6d0="}}');
+                    ref.read(selectedProfileProvider.notifier).state = keyService.profiles.length - 1;
+                    authService.login(context, _usernameController.text,
+                        keyService.profiles.entries.toList()[ref.read(selectedProfileProvider)].value,
+                        keyService.servers.entries.toList()[ref.read(selectedServerProvider)].value, ref);
+                  }),
                 ],
               ),
               

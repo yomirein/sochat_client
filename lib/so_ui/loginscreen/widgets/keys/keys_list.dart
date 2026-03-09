@@ -10,7 +10,7 @@ import 'package:sochat_client/so_ui/chatscreen/widgets/search/search_list.dart';
 import 'package:sochat_client/context_menu/context_menu.dart';
 import 'package:sochat_client/context_menu/context_menu_button.dart';
 import 'package:sochat_client/context_menu/context_window.dart';
-import 'package:sochat_client/so_ui/common/icon_button.dart';
+import 'package:sochat_client/so_ui/common/so_button.dart';
 import 'package:sochat_client/so_ui/loginscreen/widgets/keys/selectable_button.dart';
 import 'package:sochat_client/so_ui/loginscreen/widgets/settings_button.dart';
 
@@ -56,19 +56,19 @@ class KeysList extends ConsumerWidget  {
                   Text("Keychain", style: Theme.of(context).textTheme.labelSmall,),
                   Row(
                     children: [
-                      SoIconButton(Icons.add, height: 30, width: 30, onPressed: () async {
+                      SoButton(height: 30, width: 30, onPressed: () async {
                         await ref.watch(keyServiceProvider.notifier).generateProfile();
-                      },),
-                      SoIconButton(Icons.edit, height: 30, width: 30, onPressed: Menus.keyEditorWindow(context, selectedKey, ref),),
-                      SoIconButton(Icons.copy, height: 30, width: 30, onPressed: () async {
+                      },child: Icon(Icons.add, color: context.colors.textPrimary, size: 25),),
+                      SoButton(height: 30, width: 30, onPressed: Menus.keyEditorWindow(context, selectedKey, ref),child: Icon(Icons.edit, color: context.colors.textPrimary, size: 25),),
+                      SoButton(height: 30, width: 30, onPressed: () async {
                         await Clipboard.setData(ClipboardData(text: keyServiceNotifier.toJson(selectedKey)));
-                      },),
-                      SoIconButton(Icons.paste, height: 30, width: 30, onPressed: () async {
+                      },child: Icon(Icons.copy, color: context.colors.textPrimary, size: 25),),
+                      SoButton(height: 30, width: 30, onPressed: () async {
                         final data = await Clipboard.getData(Clipboard.kTextPlain);
                         String text = data?.text ?? "";
                         keyServiceNotifier.parseEntry(text);
 
-                      },),
+                      },child: Icon(Icons.paste, color: context.colors.textPrimary, size: 25),),
                     ],
                   ),
                 ],

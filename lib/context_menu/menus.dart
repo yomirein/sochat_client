@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
+import 'package:sochat_client/modules/chats/chat.dart';
 import 'package:sochat_client/modules/chats/chat_service.dart';
+import 'package:sochat_client/modules/chats/chat_type.dart';
 import 'package:sochat_client/modules/friends/friendship.dart';
 import 'package:sochat_client/modules/keys/key.dart';
 import 'package:sochat_client/modules/users/user.dart';
 import 'package:sochat_client/context_menu/context_manager.dart';
 import 'package:sochat_client/modules/friends/friends_service.dart';
 import 'package:sochat_client/modules/keys/key_service.dart';
+import 'package:sochat_client/modules/users/user_service.dart';
 import 'package:sochat_client/so_ui/common/input.dart';
 import 'package:sochat_client/so_ui/chatscreen/widgets/search/search_list.dart';
 import 'package:sochat_client/context_menu/context_menu_button.dart';
 import 'package:sochat_client/context_menu/context_window.dart';
-import 'package:sochat_client/so_ui/common/icon_button.dart';
+import 'package:sochat_client/so_ui/common/so_button.dart';
 import 'package:sochat_client/so_ui/loginscreen/widgets/settings_button.dart';
+import 'package:sochat_client/so_ux/chatscreen/chat_controller.dart';
 
 class Menus {
 
@@ -36,15 +40,21 @@ class Menus {
           spacing: 8,
           children: [
             SoCommonInput(textEditingController: usernameController,),
-            SoIconButton(Icons.send, height: 30, width: 30, onPressed: () {
+
+
+            ///
+            ///  DEBUG TOOLS
+            ///
+            SoButton(height: 30, width: 30, onPressed: () {
               friendShipService.sendFriendRequest(usernameController.text);
-            },),
-            SoIconButton(Icons.smart_button, height: 30, width: 30, onPressed: () {
+            },child: Icon(Icons.send),),
+            SoButton(height: 30, width: 30, onPressed: () {
               friendShipService.getRelativesList();
-            },),
-            SoIconButton(Icons.error, height: 30, width: 30, onPressed: () {
+            },child: Icon(Icons.smart_button),),
+            SoButton(height: 30, width: 30, onPressed: () {
               chatService.getChatList();
-            },),
+            },child: Icon(Icons.error),),
+
             Expanded(child: SearchList()),
           ],
         ),
@@ -52,10 +62,46 @@ class Menus {
     };
   }
 
+  static VoidCallback openProfile(
+      BuildContext context,
+      WidgetRef ref,
+      Chat chat,
+      ) {
+    final userService = ref.read(userServiceProvider.notifier);
+
+    if (chat.type == ChatType.PRIVATE) {
+      return () {
+        userService.getUserByUsername(chat.title).then((user) {
+          final callback = userProfile(context, ref, user.key);
+          callback();
+        });
+      };
+    } else {
+      return chatProfile(context, ref, chat);
+    }
+  }
+
   static VoidCallback userProfile(
       BuildContext context,
-      WidgetRef ref)
+      WidgetRef ref, User user)
   {
+    return showProfileWindow(context, ref, title: user.username, avatarLetter: user.username[0]);
+  }
+
+  static VoidCallback chatProfile(
+      BuildContext context,
+      WidgetRef ref, Chat chat)
+  {
+    return showProfileWindow(context, ref, title: chat.title, avatarLetter: chat.title[0]);
+  }
+
+  static VoidCallback showProfileWindow(
+      BuildContext context,
+      WidgetRef ref, {
+        required String title,
+        required String avatarLetter,
+        String description = "desc",
+      }) {
     return () {
       showContextWindow(
         context,
@@ -85,8 +131,8 @@ class Menus {
                   spacing: 10,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    CircleAvatar(child: Text("g"), radius: 35),
-                    Text("status"),
+                    CircleAvatar(radius: 35, child: Text(avatarLetter)),
+                    Text(title),
                   ],
                 ),
               ),
@@ -106,20 +152,20 @@ class Menus {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text("desc")),
+                    padding: EdgeInsets.all(8),
+                    child: Text(description),
+                  ),
                 ),
               ),
               Expanded(
                 child: Column(
-                  children: [
-
-                  ],
-                )
+                  children: [],
+                ),
               ),
             ],
           ),
-        ));
+        ),
+      );
     };
   }
 
@@ -272,21 +318,280 @@ class Menus {
     };
   }
 
+  static VoidCallback createChatDialog(
+      BuildContext context,
+      WidgetRef ref)
+  {
+    return () async {
+      TextEditingController chatNameController = TextEditingController();
+
+
+      ChatService chatService = ref.read(chatsServiceProvider.notifier);
+
+      await ref.read(chatControllerProvider.notifier).getFriendsList();
+      final friendsList = ref.read(friendsListProvider);
+
+      final selectedButtons = ValueNotifier<List<int>>([]);
+      final isSecure = ValueNotifier<bool>(true);
+
+      showContextWindow(
+        context,
+        ref,
+        height: 500,
+        width: 450,
+
+          child: Column(
+            spacing: 8,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SoCommonInput(
+                textEditingController: chatNameController,
+                decoration: InputDecoration(
+                  hintText: "Type chat name",
+                ),
+              ),
+
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: context.colors.foreground,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border(
+                      bottom: BorderSide(color: context.colors.outline, width: 1),
+                    ),
+                  ),
+                  child: ListView.builder(
+                    itemCount: friendsList.length,
+                    itemBuilder: (context, index) {
+                      return ValueListenableBuilder(
+                        valueListenable: selectedButtons,
+                        builder: (context, selected, _) {
+
+                          final isSelected = selected.contains(index);
+
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: SoButton(
+                              color: isSelected ? Colors.black.withOpacity(0.05) : Colors.transparent,
+                              width: 300,
+                              height: 60,
+                              onPressed: () {
+                                if (isSelected) {
+                                  selectedButtons.value = List.from(selected)..remove(index);
+                                } else {
+                                  selectedButtons.value = List.from(selected)..add(index);
+                                }
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 25,
+                                          child: Text(friendsList[index].username[0]),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(friendsList[index].username),
+                                      ],
+                                    ),
+                                    isSelected ? Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                      child: Icon(Icons.check),
+                                    ) : Container()
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      );
+                    },
+                  ),
+                ),
+              ),
+              SoButton(
+                width: 500,
+                height: 50,
+                onPressed: () {
+                  List<int> userId = [];
+                  for (int friendIndex in selectedButtons.value){
+                    userId.add(friendsList[friendIndex].id);
+                  }
+                  if (isSecure.value) {
+                    chatService.createChat(userId, ChatType.GROUP_SECURE, chatNameController.text);
+                  } else {
+                    chatService.createChat(userId, ChatType.GROUP_INSECURE, chatNameController.text);
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("Create Group", textAlign: .center),
+                ),
+              ),
+              Row(
+                spacing: 4,
+                children: [
+                  SoButton(
+                    width: 30,
+                    height: 30,
+                    color: Colors.transparent,
+                    onPressed: () { isSecure.value = !isSecure.value; },
+                    child: ValueListenableBuilder(
+                      valueListenable: isSecure,
+                      builder: (context, value, _) {
+                        final isSecured = value;
+                        return isSecured ? Icon(Icons.check_box_outlined) : Icon(Icons.check_box_outline_blank);
+                      }
+                    ),
+                    ),
+                  Text(
+                    "show chat history for new members?"
+                  ),
+                  Text(
+                      "(secure)",
+                    style: TextStyle(
+                      color: context.colors.positive
+                    ),
+                  )
+                ],
+              )
+            ],
+          )
+      );
+    };
+  }
+
+
+  static VoidCallback addParticipantDialog(
+      BuildContext context,
+      WidgetRef ref)
+  {
+    return () async {
+      ChatService chatService = ref.read(chatsServiceProvider.notifier);
+
+      await ref.read(chatControllerProvider.notifier).getFriendsList();
+      final friendsList = ref.read(friendsListProvider);
+      final selectedChat = ref.read(selectedChatProvider.notifier).state;
+      final selectedButtons = ValueNotifier<List<int>>([]);
+
+      showContextWindow(
+          context,
+          ref,
+          height: 500,
+          width: 450,
+
+          child: Column(
+            spacing: 8,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: context.colors.foreground,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border(
+                      bottom: BorderSide(color: context.colors.outline, width: 1),
+                    ),
+                  ),
+                  child: ListView.builder(
+                    itemCount: friendsList.length,
+                    itemBuilder: (context, index) {
+                      return ValueListenableBuilder(
+                          valueListenable: selectedButtons,
+                          builder: (context, selected, _) {
+
+                            final isSelected = selected.contains(index);
+
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: SoButton(
+                                color: isSelected ? Colors.black.withOpacity(0.05) : Colors.transparent,
+                                width: 300,
+                                height: 60,
+                                onPressed: () {
+                                  if (isSelected) {
+                                    selectedButtons.value = List.from(selected)..remove(index);
+                                  } else {
+                                    selectedButtons.value = List.from(selected)..add(index);
+                                  }
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 25,
+                                            child: Text(friendsList[index].username[0]),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(friendsList[index].username),
+                                        ],
+                                      ),
+                                      isSelected ? Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                        child: Icon(Icons.check),
+                                      ) : Container()
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                      );
+                    },
+                  ),
+                ),
+              ),
+              SoButton(
+                width: 500,
+                height: 50,
+                onPressed: () async {
+                  List<int> userIds = [];
+                  for (int friendIndex in selectedButtons.value){
+                    userIds.add(friendsList[friendIndex].id);
+                  }
+
+                  for (int userId in userIds) {
+                    await chatService.addParticipant(userId, selectedChat!);
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("Add users", textAlign: .center),
+                ),
+              ),
+            ],
+          )
+      );
+    };
+  }
+
 
   static List<ContextMenuButton> userContext(
       BuildContext context,
       WidgetRef ref,
-      String nickname, String description) {
+      Chat chat, String description) {
+
+    final chatService = ref.read(chatsServiceProvider.notifier);
+
     return [
-      ContextMenuButton(text: nickname,
-        leading: CircleAvatar(radius: 20, child: Text(nickname[0])), onTap: () {} ,
+      ContextMenuButton(text: chat.title,
+        leading: CircleAvatar(radius: 20, child: Text(chat.title[0])), onTap: openProfile(context, ref, chat),
         description: description,),
       ContextMenuButton(text: "Pin",
           leading: Icon(Icons.push_pin), onTap: () {}),
       ContextMenuButton(text: "Mark read",
           leading: Icon(Icons.mark_chat_read), onTap: () {}),
       ContextMenuButton(text: "Delete chat",
-          leading: Icon(Icons.delete_forever), onTap: () {}),
+          leading: Icon(Icons.delete_forever), onTap: () {
+        chatService.deleteChat(chat.id);
+          }),
       ContextMenuButton(text: "Block",
           leading: Icon(Icons.block), onTap: () {}),
     ];
@@ -295,44 +600,44 @@ class Menus {
   static List<ContextMenuButton> friendContext(
       BuildContext context,
       WidgetRef ref,
-      String nickname, String description) {
+      User user, String description) {
     final friendshipService = ref.read(friendsServiceProvider.notifier);
     final chatService = ref.read(chatsServiceProvider.notifier);
 
     List<ContextMenuButton> items = [];
 
-    items.add(ContextMenuButton(text: nickname,
-      leading: CircleAvatar(radius: 20, child: Text(nickname[0])), onTap: () {} ,
+    items.add(ContextMenuButton(text: user.username,
+      leading: CircleAvatar(radius: 20, child: Text(user.username[0])), onTap: () {} ,
       description: description));
 
-    FriendshipStatus status = friendshipService.friendships[nickname]!.status;
+    FriendshipStatus status = friendshipService.friendships[user.username]!.status;
 
     if (status == FriendshipStatus.ACCEPTED){
       items.add(ContextMenuButton(text: "Remove friend",
           leading: Icon(Icons.face_retouching_natural_sharp),
-          onTap: () { friendshipService.removeFriend(nickname);}));
+          onTap: () { friendshipService.removeFriend(user.username);}));
       items.add(ContextMenuButton(text: "Create chat",
           leading: Icon(Icons.face_retouching_natural_sharp),
-          onTap: () { chatService.createChat(nickname);}));
+          onTap: () { chatService.createChat([user.id], ChatType.PRIVATE, null);}));
 
       items.add(ContextMenuButton(text: "Block",
           leading: Icon(Icons.block),
-          onTap: () { friendshipService.blockUser(nickname);}));
+          onTap: () { friendshipService.blockUser(user.username);}));
     }
     else if (status == FriendshipStatus.PENDING){
       items.add(ContextMenuButton(text: "Decline request",
           leading: Icon(Icons.face_retouching_natural_sharp),
-          onTap: () { friendshipService.removeFriend(nickname);}));
+          onTap: () { friendshipService.removeFriend(user.username);}));
 
       items.add(ContextMenuButton(text: "Block",
           leading: Icon(Icons.block),
-          onTap: () { friendshipService.blockUser(nickname);}));
+          onTap: () { friendshipService.blockUser(user.username);}));
     }
 
     else if (status == FriendshipStatus.BLOCKED){
       items.add(ContextMenuButton(text: "Unblock",
           leading: Icon(Icons.face_retouching_natural_sharp),
-          onTap: () { friendshipService.blockUser(nickname);}));
+          onTap: () { friendshipService.blockUser(user.username);}));
     }
 
 

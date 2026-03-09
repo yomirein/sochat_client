@@ -6,19 +6,20 @@ import 'package:sochat_client/context_menu/context_menu.dart';
 import 'package:sochat_client/extenstions/hex_color.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/context_menu/context_menu_button.dart';
-import 'package:sochat_client/so_ui/common/icon_button.dart';
+import 'package:sochat_client/modules/users/user.dart';
+import 'package:sochat_client/so_ui/common/so_button.dart';
 
 
 class FriendItem extends ConsumerWidget {
   const FriendItem({
     super.key,
-    required this.nickname,
+    required this.user,
     this.description = "",
     this.trailing,
     this.menuItems,
   });
 
-  final String nickname;
+  final User user;
   final String description;
   final Widget? trailing;
   final List<ContextMenuButton>? menuItems;
@@ -32,11 +33,11 @@ class FriendItem extends ConsumerWidget {
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: () {},
+        onTap: Menus.userProfile(context, ref, user),
         onSecondaryTapDown: (details) {
 
           if (menuItems == null) {
-            final menuItems = Menus.friendContext(context, ref, nickname, description);
+            final menuItems = Menus.friendContext(context, ref, user, description);
             showContextMenu(
               context,
               details.globalPosition,
@@ -64,12 +65,12 @@ class FriendItem extends ConsumerWidget {
                   children: [
                     CircleAvatar(
                       radius: 25,
-                      child: Text(nickname[0]),
+                      child: Text(user.username[0]),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        nickname,
+                        user.username,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                         style: Theme.of(context).textTheme.titleMedium,

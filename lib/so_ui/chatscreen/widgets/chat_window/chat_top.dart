@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:sochat_client/context_menu/menus.dart';
 import 'package:sochat_client/extenstions/hex_color.dart';
+import 'package:sochat_client/modules/chats/chat_type.dart';
 import 'package:sochat_client/so_ui/chatscreen/widgets/top_button.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sochat_client/so_ui/common/so_button.dart';
 import 'package:sochat_client/so_ux/chatscreen/chat_controller.dart';
 
 class ChatTop extends ConsumerWidget {
@@ -38,42 +41,39 @@ class ChatTop extends ConsumerWidget {
             Row(
               spacing: 10,
               children: [
-                CircleAvatar(radius: 20, child: Text(chatList.firstWhere((chat) => chat.id == selectedChat!.id).name[0])),
-                Text(chatList.firstWhere((chat) => chat.id == selectedChat!.id).name)
+                CircleAvatar(radius: 20, child: Text(chatList.firstWhere((chat) => chat.id == selectedChat!.id).title[0])),
+                Text(chatList.firstWhere((chat) => chat.id == selectedChat!.id).title)
               ],
             ),
 
             Row(
               spacing: 10,
               children: [
-                Container(
-                  width: 40,
+                selectedChat?.type == ChatType.GROUP_INSECURE || selectedChat?.type == ChatType.GROUP_SECURE  ?
+                SoButton(
                   height: 40,
-                  child: Material(
-                    clipBehavior: Clip.hardEdge,
-                    borderRadius: BorderRadius.circular(10),
-                    color: context.colors.foreground,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: () { ref.read(isInCallProvider.notifier).state = true; },
-                      child: Icon(Icons.call),
-                    ),
-                  ),
-                ),
-                Container(
                   width: 40,
+                  onPressed: Menus.addParticipantDialog(context, ref),
+                  color: context.colors.foreground,
+                  child: Icon(Icons.person_add)) : Container(),
+                SoButton(
                   height: 40,
-                  child: Material(
-                    clipBehavior: Clip.hardEdge,
-                    borderRadius: BorderRadius.circular(10),
-                    color: context.colors.foreground,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: () {},
-                      child: Icon(Icons.video_call),
-                    ),
-                  ),
-                ),
+                  width: 40,
+                  onPressed: (){
+                    {
+                      ref.read(isInCallProvider.notifier).state = true;
+                    }},
+                  color: context.colors.foreground,
+                  child: Icon(Icons.call),),
+                SoButton(
+                  height: 40,
+                  width: 40,
+                  onPressed: (){
+                    {
+                      ref.read(isInCallProvider.notifier).state = true;
+                    }},
+                  color: context.colors.foreground,
+                  child: Icon(Icons.video_call),),
               ],
             )
           ],

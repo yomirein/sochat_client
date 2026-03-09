@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sochat_client/extenstions/hex_color.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,27 @@ class InputField extends ConsumerWidget {
     final TextEditingController messageInputController = TextEditingController();
     final chatContoller = ref.watch(chatControllerProvider.notifier);
 
+    FocusNode _focusNode = FocusNode(
+      onKeyEvent: (FocusNode node, KeyEvent event) {
+        if (event is KeyDownEvent) {
+          final shiftPressed = HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
+              HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight);
+
+          if (event.logicalKey == LogicalKeyboardKey.enter) {
+            if (shiftPressed) {
+              return KeyEventResult.ignored;
+            } else {
+              if (messageInputController.text.trim().isEmpty) KeyEventResult.ignored;
+              chatContoller.sendMessage(messageInputController.text.trim());
+              messageInputController.clear();
+
+              return KeyEventResult.handled;
+            }
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -34,7 +56,9 @@ class InputField extends ConsumerWidget {
               constraints: BoxConstraints(
                   maxHeight: 180
               ),
+
               child: TextField(
+                focusNode: _focusNode,
                 keyboardType: TextInputType.multiline,
                 style: Theme.of(context).textTheme.bodyMedium,
                 maxLines: null,

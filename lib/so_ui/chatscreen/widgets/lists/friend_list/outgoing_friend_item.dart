@@ -7,7 +7,8 @@ import 'package:sochat_client/extenstions/hex_color.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/context_menu/context_menu_button.dart';
 import 'package:sochat_client/modules/friends/friends_service.dart';
-import 'package:sochat_client/so_ui/common/icon_button.dart';
+import 'package:sochat_client/modules/users/user.dart';
+import 'package:sochat_client/so_ui/common/so_button.dart';
 
 import 'friend_item.dart';
 
@@ -15,11 +16,11 @@ import 'friend_item.dart';
 class OutgoingFriendItem extends ConsumerWidget {
   const OutgoingFriendItem({
     super.key,
-    required this.nickname,
+    required this.user,
     this.description = "",
   });
 
-  final String nickname;
+  final User user;
   final String description;
 
   @override
@@ -27,15 +28,16 @@ class OutgoingFriendItem extends ConsumerWidget {
     final friendService = ref.read(friendsServiceProvider.notifier);
 
     return FriendItem(
-      nickname: nickname,
+      user: user,
       description: description,
-      trailing: SoIconButton(
-        Icons.close,
+      trailing: SoButton(
         height: 30,
         width: 30,
         onPressed: () {
-          friendService.declineFriendRequest(nickname);
+          friendService.declineFriendRequest(user.username);
         },
+        child: Icon(Icons.close, color: context.colors.textPrimary, size: 25)
+
       ),
     );
   }

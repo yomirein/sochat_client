@@ -98,9 +98,6 @@ class FriendsService extends StateNotifier<FriendsState>{
   void startListen(){
     _webSocket.friendsMessages.listen((message) {
       switch(message.type) {
-        case ("authenticate"):
-          getRelativesList();
-          break;
         case ("friend_request"):
           {
             receiveFriendRequest(message);
@@ -153,7 +150,7 @@ class FriendsService extends StateNotifier<FriendsState>{
     );
   }
 
-  void getRelativesList() async {
+  Future<void> getRelativesList() async {
     MessagePacket message = MessagePacket(type: "relatives_list", payload: {});
     MessagePacket request = await _webSocket.sendRequest(message);
 

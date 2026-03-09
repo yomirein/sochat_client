@@ -1,12 +1,12 @@
 
 import 'dart:convert';
-import 'dart:ffi';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:sochat_client/modules/chats/chat.dart';
 import 'package:sochat_client/modules/chats/chat_service.dart';
+import 'package:sochat_client/modules/users/user_service.dart';
 import 'package:sochat_client/modules/websocket/message_packet.dart';
 import 'package:sochat_client/modules/users/user.dart';
 import 'package:sochat_client/modules/websocket/web_socket_service.dart';
@@ -18,7 +18,7 @@ import 'message.dart';
 
 
 final messageServiceProvider = StateNotifierProvider<MessageService, MessagesState>(
-      (ref) => MessageService(ref.read(webSocketProvider), ref.read(keyServiceProvider.notifier), ref.read(authServiceProvider), ref.read(chatsServiceProvider.notifier), ref),);
+      (ref) => MessageService(ref.read(webSocketProvider), ref.read(keyServiceProvider.notifier), ref.read(authServiceProvider), ref.read(chatsServiceProvider.notifier), ref.read(userServiceProvider.notifier), ref),);
 
 
 
@@ -42,10 +42,11 @@ class MessageService extends StateNotifier<MessagesState> {
   final KeyService _keyService;
   final AuthService _authService;
   final ChatService _chatService;
+  final UserService _userService;
 
   Ref ref;
 
-  MessageService(this._webSocket, this._keyService, this._authService, this._chatService, this.ref)
+  MessageService(this._webSocket, this._keyService, this._authService, this._chatService, this._userService, this.ref)
       : super(MessagesState(messageList: [])) {
     startListen();
   }
@@ -73,34 +74,41 @@ class MessageService extends StateNotifier<MessagesState> {
     });
   }
 
-  Future<void> getRecentMessages(Chat chat, int limit) async {
+  Future<void> getRecentMessages(Chat chat, int offset, {atStart = true}) async {
     MessagePacket message = MessagePacket(type: "message_list", payload: {
-      "limit": limit,
+      "offset": offset,
       "chatId": chat.id,
     });
     final request = await _webSocket.sendRequest(message);
 
     List<dynamic> messageList = jsonDecode(request.payload["messages"]);
 
+
     for (final message in messageList.reversed){
-      message['content'] = await _keyService.decryptWithAes(message['content'], chat.chatKey!);
-      addMessage(Message.fromJson(message, (await _webSocket.getUserById(message["senderId"])).key));
+      try {
+        message['content'] = await _keyService.decryptWithAes(message['content'], chat.findChatKeyByVersion(message['keyVersion'])!.key);
+
+        User user = chat.participants.keys.any((user) => user.id == message["senderId"])
+            ? chat.participants.keys.firstWhere((user) => user.id == message["senderId"])
+            : ((await _userService.getUserById(message["senderId"])).key);
+        addMessage(Message.fromJson(message, user), atStart: atStart);
+      }catch (e){
+        print("no");
+      }
     }
   }
 
-  Future<void> getMessage(int messageId) async {
+  Future<void> getMessage(int messageId, Chat? chat) async {
     MessagePacket message = MessagePacket(type: "message_get", payload: {
       "messageId": messageId,
     });
     final request = await _webSocket.sendRequest(message);
-    receiveMessage(request, null);
+    receiveMessage(request, chat);
   }
 
 
   Future<void> sendMessage(String content, int? replyMessageId, Chat chat) async{
-
-    // TODO: Make encrypt content method in KeyService
-    String encryptedContent = await _keyService.encryptWithAes(content, chat.chatKey!);
+    String encryptedContent = await _keyService.encryptWithAes(content, chat.findLatestChatKey()!.key);
 
     MessagePacket message = MessagePacket(type: "message_send", payload: {
       "content": encryptedContent,
@@ -115,20 +123,22 @@ class MessageService extends StateNotifier<MessagesState> {
   }
 
   Future<void> receiveMessage(MessagePacket requestPacket, Chat? chat) async{
-    chat ??= await _chatService.getChatById(int.parse(requestPacket.payload["chatId"]));
 
-    // TODO: Make decrypt content method
+    chat ??= await _chatService.getChatById(int.parse(requestPacket.payload["chatId"]));
+    if (chat.chatKeys == []){
+      _chatService.getChatById(chat.id);
+    }
 
     final messageJson = jsonDecode(requestPacket.payload["message"]);
 
-    messageJson['content'] = await _keyService.decryptWithAes(messageJson['content'], chat.chatKey!);
+    messageJson['content'] = await _keyService.decryptWithAes(messageJson['content'], chat.findChatKeyByVersion(messageJson['keyVersion'])!.key);
 
     late Message message;
-    if (chat.participants.any((u) => u.id == messageJson["senderId"]!)){
-      message = Message.fromJson(messageJson, chat.participants.firstWhere((u) => u.id == messageJson["senderId"]!));
+    if (chat.participants.keys.any((u) => u.id == messageJson["senderId"]!)){
+      message = Message.fromJson(messageJson, chat.participants.keys.firstWhere((u) => u.id == messageJson["senderId"]!));
     }
     else {
-      User sender = (await _webSocket.getUserById(messageJson["senderId"]))
+      User sender = (await _userService.getUserById(messageJson["senderId"]))
           .key;
       message = Message.fromJson(
           jsonDecode(requestPacket.payload["message"]), sender);
@@ -137,15 +147,18 @@ class MessageService extends StateNotifier<MessagesState> {
   }
 
 
-  void addMessage(Message message) {
-
+  void addMessage(Message message, {bool atStart = true}) {
     final notifier = ref.read(chatMessagesProvider.notifier);
     final currentMap = notifier.state;
     final currentMessages = currentMap[message.chatId] ?? [];
 
+    if (currentMessages.any((m) => m.id == message.id)) return;
+
     final updatedMap = {
       ...currentMap,
-      message.chatId: [...currentMessages, message],
+      message.chatId: atStart
+          ? [message, ...currentMessages]
+          : [...currentMessages, message],
     };
 
     notifier.state = updatedMap;

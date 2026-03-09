@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:sochat_client/modules/users/user.dart';
+import 'package:sochat_client/modules/websocket/message_packet.dart';
 import 'package:sochat_client/modules/websocket/web_socket_service.dart';
 
 import '../common/auth_service.dart';
@@ -36,5 +40,29 @@ class UserService extends StateNotifier<UserState> {
     _webSocket.usersMessages.listen((message) {
 
     });
+  }
+
+
+  Future<MapEntry<User, String>> getUserByUsername(String username) async {
+    MessagePacket message = MessagePacket(type: "user_get", payload: {
+      "username": username,
+    });
+    MessagePacket request = await _webSocket.sendRequest(message);
+    final userMap = jsonDecode(request.payload["user"]) as Map<String, dynamic>;
+    User user = User.fromJson(userMap);
+    String pbKey = userMap["x25519PublicKey"];
+
+    return MapEntry(user, pbKey);
+  }
+  Future<MapEntry<User, String>> getUserById(int id) async {
+    MessagePacket message = MessagePacket(type: "user_get", payload: {
+      "id": id,
+    });
+    MessagePacket request = await _webSocket.sendRequest(message);
+    final userMap = jsonDecode(request.payload["user"]) as Map<String, dynamic>;
+    User user = User.fromJson(userMap);
+    String pbKey = userMap["x25519PublicKey"];
+
+    return MapEntry(user, pbKey);
   }
 }

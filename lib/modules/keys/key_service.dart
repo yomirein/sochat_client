@@ -322,26 +322,31 @@ class KeyService extends StateNotifier<KeyServiceState> {
   }
 
   Future<String> decryptWithAes(String base64EncodedContent, SecretKey aesKey) async {
-    final algorithm = AesGcm.with256bits();
+    try {
+      final algorithm = AesGcm.with256bits();
 
-    final combined = base64Decode(base64EncodedContent);
+      final combined = base64Decode(base64EncodedContent);
 
-    final nonce = combined.sublist(0, 12);
-    final mac = Mac(combined.sublist(combined.length - 16));
-    final cipherText = combined.sublist(12, combined.length - 16);
+      final nonce = combined.sublist(0, 12);
+      final mac = Mac(combined.sublist(combined.length - 16));
+      final cipherText = combined.sublist(12, combined.length - 16);
 
-    final secretBox = SecretBox(
-      cipherText,
-      nonce: nonce,
-      mac: mac,
-    );
+      final secretBox = SecretBox(
+        cipherText,
+        nonce: nonce,
+        mac: mac,
+      );
 
-    final decrypted = await algorithm.decrypt(
-      secretBox,
-      secretKey: aesKey,
-    );
+      final decrypted = await algorithm.decrypt(
+        secretBox,
+        secretKey: aesKey,
+      );
 
-    return utf8.decode(decrypted);
+      return utf8.decode(decrypted);
+    }
+    catch (e){
+      return "Couldn't decrypt content";
+    }
   }
 
 }

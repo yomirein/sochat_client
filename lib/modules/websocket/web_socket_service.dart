@@ -47,8 +47,9 @@ class WebSocketService{
     await channel!.ready;
     _startPing();
     channel!.stream.listen((message) {
-      print("WS RAW MESSAGE: $message");
       MessagePacket messagg = MessagePacket.fromJson(jsonDecode(message));
+
+      if (messagg.type != "pong") print("WS RAW MESSAGE: $message");
 
       final requestId = messagg.payload["requestId"];
       if (requestId != null && _pendingRequests.containsKey(requestId)) {
@@ -62,11 +63,6 @@ class WebSocketService{
             print("pong");
             break;
           }
-        case "authenticate":{
-          _friendsController.add(messagg);
-          _chatsController.add(messagg);
-          break;
-        }
 
         case "friend_request":
         case "friend_accept":
@@ -76,6 +72,7 @@ class WebSocketService{
           _friendsController.add(messagg);
           break;
         }
+        case "authenticate":
         case "chat_create":
         case "chat_delete": {
           _chatsController.add(messagg);
@@ -87,6 +84,8 @@ class WebSocketService{
           _messagesController.add(messagg);
           break;
       }
+        default:
+          print("Необработанный тип: ${messagg.type}");
       }
     });
   }
@@ -139,28 +138,5 @@ class WebSocketService{
     MessagePacket request = await sendRequest(message);
     _friendsController.add(request);
     }
-
-  Future<MapEntry<User, String>> getUserByUsername(String username) async {
-    MessagePacket message = MessagePacket(type: "user_get", payload: {
-      "username": username,
-    });
-    MessagePacket request = await sendRequest(message);
-    final userMap = jsonDecode(request.payload["user"]) as Map<String, dynamic>;
-    User user = User.fromJson(userMap);
-    String pbKey = userMap["x25519PublicKey"];
-
-    return MapEntry(user, pbKey);
-  }
-  Future<MapEntry<User, String>> getUserById(int id) async {
-    MessagePacket message = MessagePacket(type: "user_get", payload: {
-      "id": id,
-    });
-    MessagePacket request = await sendRequest(message);
-    final userMap = jsonDecode(request.payload["user"]) as Map<String, dynamic>;
-    User user = User.fromJson(userMap);
-    String pbKey = userMap["x25519PublicKey"];
-
-    return MapEntry(user, pbKey);
-  }
 
 }
