@@ -5,31 +5,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 
 class SoButton extends ConsumerWidget {
+  const SoButton({
+    super.key,
+    required this.child,
+    required this.height,
+    required this.width,
+    this.onPressed,
+    this.color,
+  });
 
-  SoButton({super.key, required this.child, required this.height, required this.width, this.onPressed, this.color});
   final Widget child;
-  double height;
-  double width;
+  final double height;
+  final double width;
   final VoidCallback? onPressed;
-
-  Color? color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    color ??= context.colors.foreground;
+    final buttonColor = color ?? context.colors.foreground;
 
     return SizedBox(
-      width: width,
       height: height,
-      child: Material(
-        clipBehavior: Clip.hardEdge,
-        borderRadius: BorderRadius.circular(10),
-        color: color,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: onPressed,
-          child: child,
+      width: width,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: buttonColor,
         ),
+        child: child,
       ),
     );
   }
