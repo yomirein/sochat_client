@@ -33,7 +33,6 @@ What was done / Что было сделано:
 | Library   | Version |
 | ---------- | ----- |
 | encrypt   | 5.0.3 |
-| fast_rsa(WILL BE DELETED) | 3.8.6 |
 | flutter_riverpod | 3.2.1 |
 | http | 1.6.0 |
 | cryptography | 2.9.0 |

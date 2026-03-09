@@ -1,0 +1,6 @@
+enum ChatType{
+  PRIVATE,
+  GROUP_INSECURE,
+  GROUP_SECURE,
+  CHANNEL
+}
