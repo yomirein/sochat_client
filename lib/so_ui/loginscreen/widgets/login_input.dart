@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sochat_client/extenstions/hex_color.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 
 class LoginInput extends ConsumerWidget {
   final String hintText;
   final TextEditingController inputController;
   final double height;
+  final ValueChanged<String>? onChanged;
 
-  const LoginInput({super.key, required this.hintText, required this.inputController, required this.height});
+  const LoginInput({super.key, required this.hintText, required this.inputController, required this.height, this.onChanged});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,6 +30,7 @@ class LoginInput extends ConsumerWidget {
           hintStyle: Theme.of(context).textTheme.labelMedium,
           border: const OutlineInputBorder(borderSide: BorderSide.none),
         ),
+        onChanged: onChanged
       ),
     );
   }

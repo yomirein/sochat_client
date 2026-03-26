@@ -3,12 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
-import 'package:sochat_client/modules/keys/key_service.dart';
-import 'package:sochat_client/so_ui/common/input.dart';
-import 'package:sochat_client/so_ui/chatscreen/widgets/search/search_list.dart';
-import 'package:sochat_client/context_menu/context_window.dart';
-import 'package:sochat_client/context_menu/context_menu.dart';
-import 'package:sochat_client/context_menu/context_menu_button.dart';
+import 'package:sochat_client/context/context_menu.dart';
+import 'package:sochat_client/context/context_menu_button.dart';
 
 class SelectableButton extends ConsumerStatefulWidget {
 

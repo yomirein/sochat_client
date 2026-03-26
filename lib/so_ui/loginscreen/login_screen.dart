@@ -4,9 +4,6 @@ import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/modules/keys/key_service.dart';
 import 'package:sochat_client/so_ui/loginscreen/keysettings.dart';
 import 'package:sochat_client/so_ui/loginscreen/login_widget.dart';
-import 'package:sochat_client/so_ui/loginscreen/widgets/login_button.dart';
-import 'package:sochat_client/so_ui/loginscreen/widgets/login_input.dart';
-import 'package:sochat_client/so_ui/loginscreen/widgets/settings_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final settingsToggle = StateProvider<bool>((ref) => false);

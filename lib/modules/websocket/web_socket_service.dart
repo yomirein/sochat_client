@@ -1,21 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sochat_client/context/notifications/notifications_manager.dart';
 import 'package:sochat_client/modules/websocket/message_packet.dart';
-import 'package:sochat_client/modules/users/user.dart';
-import 'package:sochat_client/modules/friends/friends_service.dart';
-import 'package:sochat_client/modules/keys/key_service.dart';
-import 'package:web_socket_channel/io.dart';
+import 'package:sochat_client/so_ui/notifications/so_notification.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'dart:io';
 
 final webSocketProvider = Provider<WebSocketService>((ref) {
-  final service = WebSocketService();
+  final service = WebSocketService(ref);
 
   ref.onDispose(() {
-    service.channel?.sink.close();
+    service.dispose();
   });
   return service;
 });
@@ -23,6 +21,8 @@ final webSocketProvider = Provider<WebSocketService>((ref) {
 
 class WebSocketService{
   WebSocketChannel? channel;
+
+  final RequestIdGenerator _requestIdGenerator = RequestIdGenerator();
 
   final _friendsController = StreamController<MessagePacket>.broadcast();
   Stream<MessagePacket> get friendsMessages => _friendsController.stream;
@@ -37,7 +37,35 @@ class WebSocketService{
   Stream<MessagePacket> get messagesMessages => _messagesController.stream;
 
   final _pendingRequests = <String, Completer>{};
+  Timer? _pingTimer;
+  Ref _ref;
 
+  WebSocketService(this._ref);
+
+  void dispose() {
+    _pingTimer?.cancel();
+    _pendingRequests.clear();
+
+    _friendsController.close();
+    _chatsController.close();
+    _usersController.close();
+    _messagesController.close();
+
+    channel?.sink.close(1000);
+    channel = null;
+  }
+
+  void disconnect() {
+    if (channel != null) {
+      channel!.sink.close(1000);
+
+    }
+    if (_pingTimer != null && _pingTimer!.isActive){
+      _pingTimer!.cancel();
+    }
+    channel = null;
+
+  }
 
   Future<void> connect() async {
     channel = WebSocketChannel.connect(
@@ -53,17 +81,27 @@ class WebSocketService{
 
       final requestId = messagg.payload["requestId"];
       if (requestId != null && _pendingRequests.containsKey(requestId)) {
+        final safePayload = Map<String, dynamic>.from(messagg.payload);
+
+        messagg = MessagePacket(
+          type: messagg.type,
+          payload: safePayload,
+        );
         _pendingRequests[requestId]!.complete(messagg);
         _pendingRequests.remove(requestId);
       }
 
-      switch (messagg.type) {
-        case "pong":
-          {
-            print("pong");
-            break;
-          }
+      if (messagg.payload["success"] == "false"){
+        _ref.read(notificationsManagerProvider.notifier).addUpdate(
+          SoNotification(
+            icon: Icons.error_outline,
+            title: "Unhandled request Error",
+            content: messagg.payload["server_message"],
+          ),
+        );
+      }
 
+      switch (messagg.type) {
         case "friend_request":
         case "friend_accept":
         case "friend_decline":
@@ -74,12 +112,14 @@ class WebSocketService{
         }
         case "authenticate":
         case "chat_create":
+        case "chat_add_participant":
         case "chat_delete": {
           _chatsController.add(messagg);
           break;
         }
         case "message_send":
         case "message_edit":
+        case "message_read":
         case "message_delete":{
           _messagesController.add(messagg);
           break;
@@ -94,24 +134,23 @@ class WebSocketService{
 
   void addToSink(WebSocketChannel? channel, Map<String, dynamic> message) {
     if (channel == null) {
-      print('WS NOT CONNECTED — signal DROPPED');
       return;
     }
-
-    print(message);
     channel.sink.add(jsonEncode(message));
   }
 
-  Future<dynamic> sendRequest(MessagePacket messagePacket) {
-    final requestId = DateTime.now().millisecondsSinceEpoch.toString();
+  Future<dynamic> sendRequest(MessagePacket messagePacket, {int duration = 5}) {
+    final requestId = _requestIdGenerator.nextId();
     final completer = Completer();
     _pendingRequests[requestId] = completer;
+
+    print(messagePacket.toJson().toString());
 
     messagePacket.payload["requestId"] = requestId;
 
     addToSink(channel!, messagePacket.toJson());
     return completer.future.timeout(
-      Duration(minutes: 5),
+      Duration(minutes: duration),
       onTimeout: () {
         _pendingRequests.remove(requestId);
         throw TimeoutException("Request $requestId timed out after 5 minutes");
@@ -120,16 +159,35 @@ class WebSocketService{
   }
 
 
-  void _startPing(){
+  void _startPing() async {
     if (channel == null) return;
-    Timer.periodic(
+
+    _pingTimer = Timer.periodic(
       const Duration(seconds: 10),
-          (_) {
-            MessagePacket message = MessagePacket(type: "ping", payload: {});
-        addToSink(channel!, message.toJson());
+          (_) async {
+        MessagePacket message = MessagePacket(type: "ping", payload: {});
+        Stopwatch stopwatch = Stopwatch()..start();
+
+        try {
+          await sendRequest(message, duration: 1);
+          stopwatch.stop();
+          if (stopwatch.elapsed.inSeconds >= 10) {
+            print("Ping took longer than 10 seconds, freezing...");
+
+            Timer(Duration(minutes: 4), () {
+              print("4 minutes passed, unfreezing system...");
+            });
+          } else {
+            print("Ping was successful in ${stopwatch.elapsed.inSeconds} seconds");
+          }
+        } catch (e) {
+          stopwatch.stop();
+          print("Ping failed or timed out: $e");
+        }
       },
     );
   }
+
 
   void authenticate(String token) async {
     MessagePacket message = MessagePacket(type: "authenticate", payload: {
@@ -139,4 +197,13 @@ class WebSocketService{
     _friendsController.add(request);
     }
 
+}
+class RequestIdGenerator {
+  int _counter = 0;
+
+  String nextId() {
+    final timestamp = DateTime.now().microsecondsSinceEpoch;
+    _counter++;
+    return '$timestamp-$_counter';
+  }
 }

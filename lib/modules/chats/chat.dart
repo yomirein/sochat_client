@@ -1,5 +1,6 @@
-import 'package:cryptography/cryptography.dart';
+
 import 'package:sochat_client/modules/chats/chat_role.dart';
+import 'package:sochat_client/modules/chats/participant.dart';
 import 'package:sochat_client/modules/chats/sender_key.dart';
 import 'package:sochat_client/modules/messages/message.dart';
 import 'package:sochat_client/modules/users/user.dart';
@@ -11,10 +12,10 @@ class Chat {
   String title;
   ChatType type;
 
-  List<Message>? messages;
+  List<Message> messages = [];
 
   List<SenderKey> chatKeys = [];
-  Map<User, ChatRole> participants = {};
+  List<Participant> participants = [];
 
 
   Chat({
@@ -41,5 +42,30 @@ class Chat {
     return latest;
   }
 
+  Chat copyWith({
+    int? id,
+    String? title,
+    ChatType? type,
+    List<Participant>? participants,
+    List<SenderKey>? chatKeys,
+    Message? lastMessage,
+  }) {
+    Chat chat = Chat(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      type: type ?? this.type,
+    );
+
+    chat.participants = participants ?? List<Participant>.from(this.participants);
+    chat.chatKeys = chatKeys ?? this.chatKeys;
+
+    return chat;
+  }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other);
+
+  @override
+  int get hashCode => id.hashCode;
 
 }

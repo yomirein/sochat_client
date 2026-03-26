@@ -4,7 +4,7 @@ import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/so_ui/chatscreen/widgets/chat_window/calls/user_in_call.dart';
 import 'package:sochat_client/so_ui/common/so_button.dart';
 
-import '../../../../../so_ux/chatscreen/chat_controller.dart';
+import '../../../../../so_ux/chat_controller.dart';
 
 class CallWindow extends ConsumerWidget {
   const CallWindow({super.key});

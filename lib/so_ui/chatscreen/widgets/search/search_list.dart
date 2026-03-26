@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:sochat_client/extenstions/hex_color.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 
 class SearchList extends ConsumerWidget {

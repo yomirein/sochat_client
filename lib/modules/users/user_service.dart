@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:sochat_client/modules/users/user.dart';
 import 'package:sochat_client/modules/websocket/message_packet.dart';
@@ -9,60 +11,106 @@ import '../common/auth_service.dart';
 import '../keys/key_service.dart';
 
 final userServiceProvider = StateNotifierProvider<UserService, UserState>(
-      (ref) => UserService(ref.read(webSocketProvider), ref.read(keyServiceProvider.notifier), ref.read(authServiceProvider)),);
+      (ref) => UserService(ref.read(webSocketProvider), ref.read(keyServiceProvider.notifier), ref.read(authServiceProvider), ref.read(currentUserProvider), ref),);
 
 
 class UserState {
 
-/*ChatsState copyWith({
-
-    Map<String, Friendship>? friendships,
-  }) {
-    return FriendsState(
-      friendships: friendships ?? this.friendships,
-    );
-  }
-
-    */
 }
 
 class UserService extends StateNotifier<UserState> {
   final WebSocketService _webSocket;
   final KeyService _keyService;
   final AuthService _authService;
+  final User? currentUser;
 
-  UserService(this._webSocket, this._keyService, this._authService)
+  final Ref ref;
+
+  final Map<int, User> userBuffer = {};
+  StreamSubscription? _subscription;
+
+  UserService(this._webSocket, this._keyService, this._authService, this.currentUser, this.ref)
       : super(UserState()) {
     startListen();
   }
 
   void startListen() {
-    _webSocket.usersMessages.listen((message) {
+    _subscription = _webSocket.usersMessages.listen((message) {
 
     });
   }
 
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
-  Future<MapEntry<User, String>> getUserByUsername(String username) async {
+  Future<User> getUser({String? username, int? id, bool? forceUpdate = true}) async {
+    if (currentUser!.id == id){
+      return currentUser!;
+    }
+    if (id != null) {
+      return await _getUserById(id, forceUpdate: forceUpdate);
+    } else if (username != null) {
+      return await _getUserByUsername(username, forceUpdate: forceUpdate);
+    }
+    throw ArgumentError('Either id or username must be provided');
+  }
+
+  Future<User> _getUserByUsername(String username, {bool? forceUpdate = true}) async {
+    if (userBuffer.values.any((u) => u.username != username) && forceUpdate == false){
+      return userBuffer.values.firstWhere((u) => u.username == username);
+    }
+
     MessagePacket message = MessagePacket(type: "user_get", payload: {
       "username": username,
     });
+
+
     MessagePacket request = await _webSocket.sendRequest(message);
     final userMap = jsonDecode(request.payload["user"]) as Map<String, dynamic>;
     User user = User.fromJson(userMap);
-    String pbKey = userMap["x25519PublicKey"];
+    user.x25519PublicKey = userMap["x25519PublicKey"];
 
-    return MapEntry(user, pbKey);
+    userBuffer[user.id] = user;
+
+    return user;
   }
-  Future<MapEntry<User, String>> getUserById(int id) async {
+  Future<User> _getUserById(int id, {bool? forceUpdate = true}) async {
+    if (userBuffer[id] != null && forceUpdate == false){
+      return userBuffer[id]!;
+    }
+
     MessagePacket message = MessagePacket(type: "user_get", payload: {
       "id": id,
     });
+
     MessagePacket request = await _webSocket.sendRequest(message);
     final userMap = jsonDecode(request.payload["user"]) as Map<String, dynamic>;
     User user = User.fromJson(userMap);
-    String pbKey = userMap["x25519PublicKey"];
+    user.x25519PublicKey = userMap["x25519PublicKey"];
 
-    return MapEntry(user, pbKey);
+    userBuffer[user.id] = user;
+
+    return user;
+  }
+
+  Future<void> changeProfile(String? nickname, String? username, String? description) async {
+
+    MessagePacket message = MessagePacket(type: "user_update_profile", payload: {
+      "nickname": nickname,
+      "username": username,
+      "description": description,
+    });
+
+    MessagePacket request = await _webSocket.sendRequest(message);
+    if (request.payload["success"] == true){
+      ref.read(currentUserProvider.notifier).state = currentUser!.copyWith(
+        username: request.payload["username"],
+        nickname: request.payload["nickname"],
+        description: request.payload["description"],
+      );
+    }
   }
 }

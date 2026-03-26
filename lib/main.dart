@@ -1,31 +1,128 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:sochat_client/modules/keys/key_service.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:sochat_client/context/notifications/notifications_manager.dart';
+import 'package:sochat_client/extenstions/no_transitions.dart';
+import 'package:sochat_client/so_ui/notifications/so_notification.dart';
 import 'package:sochat_client/so_ui/chatscreen/chat_screen.dart';
-import 'package:sochat_client/extenstions/theme_getter.dart';
+import 'package:sochat_client/so_ui/notifications/notifications_overlay.dart';
 import 'package:sochat_client/so_ui/loginscreen/login_screen.dart';
 import 'package:sochat_client/so_ui/themes/colors.dart';
 import 'package:sochat_client/so_ui/themes/dark/dark_theme.dart';
-import 'package:sochat_client/so_ui/themes/light/light_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sochat_client/so_ui/themes/light/light_theme.dart';
+import 'package:sochat_client/so_ux/settings_controller.dart';
+import 'package:window_manager/window_manager.dart';
+
+import 'modules/websocket/web_socket_service.dart';
+
+final containerHolder = ValueNotifier<ProviderContainer>(ProviderContainer());
+
+void main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await windowManager.ensureInitialized();
+
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    WindowManager.instance.setMinimumSize(const Size(850, 600));
+  }
+
+  runApp(
+    ValueListenableBuilder(
+      valueListenable: containerHolder,
+      builder: (context, container, _) {
+        return UncontrolledProviderScope(
+          container: container,
+          child: const SoChat(),
+        );
+      },
+    ),
+  );
+  /*
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    await windowManager.ensureInitialized();
+
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      WindowManager.instance.setMinimumSize(const Size(850, 600));
+    }
 
 
-void main() {
-  runApp(const ProviderScope(child: SoChat()));
+
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+
+      containerHolder.value
+          .read(notificationsManagerProvider.notifier)
+          .addUpdate(
+        SoNotification(
+          icon: Icons.error_outline,
+          title: details.exception.toString(),
+          content: details.stack.toString(),
+        ),
+      );
+    };
+
+    PlatformDispatcher.instance.onError = (error, stack) {
+      containerHolder.value
+          .read(notificationsManagerProvider.notifier)
+          .addError(
+        error.toString(),
+        stack.toString(),
+      );
+
+      return true;
+    };
+
+    runApp(
+      ValueListenableBuilder(
+        valueListenable: containerHolder,
+        builder: (context, container, _) {
+          return UncontrolledProviderScope(
+            container: container,
+            child: const SoChat(),
+          );
+        },
+      ),
+    );
+  }, (error, stack) {
+    containerHolder.value
+        .read(notificationsManagerProvider.notifier)
+        .addError(
+      error.toString(),
+      stack.toString(),
+    );
+  });*/
+
 }
+
 
 class SoChat extends ConsumerWidget {
   const SoChat({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DarkTheme.extensions
+    final colors = ref.watch(settingsControllerProvider.notifier).getTheme(ref.watch(selectedThemeProvider))
         .whereType<AppColors>()
         .first;
     
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            child!,
+            NotificationsOverlay(),
+          ],
+        );
+      },
       theme: ThemeData(
-        extensions: DarkTheme.extensions,
+        extensions: ref.watch(settingsControllerProvider.notifier).getTheme(ref.watch(selectedThemeProvider)),
         useMaterial3: false,
         fontFamily: 'Inter',
 
@@ -99,7 +196,16 @@ class SoChat extends ConsumerWidget {
             )
         ),
 
-
+        pageTransitionsTheme: PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: const NoTransitionsBuilder(),
+            TargetPlatform.iOS: const NoTransitionsBuilder(),
+            TargetPlatform.fuchsia: const NoTransitionsBuilder(),
+            TargetPlatform.linux: const NoTransitionsBuilder(),
+            TargetPlatform.macOS: const NoTransitionsBuilder(),
+            TargetPlatform.windows: const NoTransitionsBuilder(),
+          },
+        ),
 
         iconTheme: IconThemeData(
           color: colors.textPrimary,
@@ -126,8 +232,8 @@ class SoChat extends ConsumerWidget {
 
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      title: 'SoChat design test',
-      home: const SoDesignPage(title: 'SoChat Test app'),
+      title: 'SoChat',
+      home: const SoDesignPage(title: 'SoChat'),
       themeMode: null,
     );
   }
@@ -137,11 +243,24 @@ class SoDesignPage extends ConsumerStatefulWidget {
   const SoDesignPage({super.key, required this.title});
   final String title;
 
+
   @override
   ConsumerState<SoDesignPage> createState() => _SoDesignPageState();
 }
 
 class _SoDesignPageState extends ConsumerState<SoDesignPage> {
+
+  late final NotificationsManager notificationsManager;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notificationManager =
+      notificationsManager = ref.read(notificationsManagerProvider.notifier);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,7 +277,9 @@ class _SoDesignPageState extends ConsumerState<SoDesignPage> {
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => ChatScreen()));
             }, child: Text("Chat")),
-            TextButton(onPressed: () {}, child: Text("Settings")),
+            TextButton(onPressed: () {
+              notificationsManager.addUpdate(SoNotification(title: "youi", content: "nananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananana", icon: Icons.error_outline));
+            }, child: Text("Notification add")),
           ],
         ),
       ),

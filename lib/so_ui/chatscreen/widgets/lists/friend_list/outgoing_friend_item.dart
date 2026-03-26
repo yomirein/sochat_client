@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sochat_client/context_menu/menus.dart';
-import 'package:sochat_client/context_menu/context_manager.dart';
-import 'package:sochat_client/context_menu/context_menu.dart';
-import 'package:sochat_client/extenstions/hex_color.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
-import 'package:sochat_client/context_menu/context_menu_button.dart';
 import 'package:sochat_client/modules/friends/friends_service.dart';
 import 'package:sochat_client/modules/users/user.dart';
 import 'package:sochat_client/so_ui/common/so_button.dart';

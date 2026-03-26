@@ -1,52 +1,105 @@
 import 'package:flutter/material.dart';
-import 'package:sochat_client/modules/users/user.dart';
+import 'package:flutter/services.dart';
 import 'package:sochat_client/so_ui/chatscreen/widgets/chat_window/calls/call_window.dart';
 import 'package:sochat_client/so_ui/chatscreen/widgets/chat_window/message_list.dart';
-import 'package:sochat_client/extenstions/hex_color.dart';
 import 'package:sochat_client/so_ui/chatscreen/widgets/chat_window/chat_top.dart';
 import 'package:sochat_client/so_ui/chatscreen/widgets/chat_window/input_field.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
-import 'package:sochat_client/modules/messages/message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sochat_client/so_ux/chatscreen/chat_controller.dart';
+import 'package:sochat_client/so_ux/chat_controller.dart';
 
-class ChatWindow extends ConsumerWidget {
+class ChatWindow extends ConsumerStatefulWidget {
   const ChatWindow({super.key});
+  @override
+  ConsumerState<ConsumerStatefulWidget> createState() => ChatWindowState();
+}
+
+class ChatWindowState extends ConsumerState<ChatWindow>{
+
+  final TextEditingController messageInputController = TextEditingController();
+  late final FocusNode textFieldFocusNode;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState(){
+    super.initState();
+    final chatController = ref.read(chatControllerProvider.notifier);
 
+    textFieldFocusNode = FocusNode(
+      onKeyEvent: (FocusNode node, KeyEvent event) {
+        if (event is KeyDownEvent) {
+          final shiftPressed = HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
+              HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight);
+
+          if (event.logicalKey == LogicalKeyboardKey.enter) {
+            if (shiftPressed) {
+              return KeyEventResult.ignored;
+            } else {
+              if (messageInputController.text.trim().isEmpty || messageInputController.text.trim() == "" || messageInputController.text.trim() == " ") KeyEventResult.ignored;
+              chatController.sendMessage(messageInputController.text.trim());
+              messageInputController.clear();
+
+              return KeyEventResult.handled;
+            }
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+    );
+    textFieldFocusNode.requestFocus();
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
     final selectedChat = ref.watch(selectedChatProvider);
     final isInCall = ref.watch(isInCallProvider);
+    final chatController = ref.read(chatControllerProvider.notifier);
+
+    final FocusNode chatFocusNode = FocusNode(
+        onKeyEvent: (FocusNode node, KeyEvent event) {
+          if (event is KeyDownEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.escape && selectedChat != null) {
+              ref.read(selectedChatProvider.notifier).state = null;
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
+        }
+    );
 
     return Expanded(
       flex: 2,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: context.colors.outline,
-            width: 1.0,
-          ),
-          color: context.colors.foreground,
-          borderRadius: BorderRadius.circular(10.0),
+      child: Focus(
+        focusNode: chatFocusNode,
+        child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: context.colors.outline,
+                width: 1.0,
+              ),
+              color: context.colors.foreground,
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            child: selectedChat != null
+                ? (isInCall
+                ? Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CallWindow()
+              ],
+            ): Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ChatTop(),
+                  Container(child: MessageList(textFieldFocusNode)),
+                  InputField(messageInputController, textFieldFocusNode)
+                ],
+              ),
+            )): Center()
         ),
-          child: selectedChat != null
-              ? (isInCall
-              ? Column(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              CallWindow()
-            ],
-          ): Column(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ChatTop(),
-              Container(child: MessageList()),
-              InputField()
-            ],
-          )): Column(children: [],)
       ),
     );
   }

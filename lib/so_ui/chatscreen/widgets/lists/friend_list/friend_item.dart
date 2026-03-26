@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sochat_client/context_menu/menus.dart';
-import 'package:sochat_client/context_menu/context_manager.dart';
-import 'package:sochat_client/context_menu/context_menu.dart';
-import 'package:sochat_client/extenstions/hex_color.dart';
-import 'package:sochat_client/extenstions/theme_getter.dart';
-import 'package:sochat_client/context_menu/context_menu_button.dart';
+import 'package:sochat_client/context/menus.dart';
+import 'package:sochat_client/context/context_manager.dart';
+import 'package:sochat_client/context/context_menu.dart';
+import 'package:sochat_client/context/context_menu_button.dart';
 import 'package:sochat_client/modules/users/user.dart';
 import 'package:sochat_client/so_ui/common/so_button.dart';
 
@@ -17,43 +15,39 @@ class FriendItem extends ConsumerWidget {
     this.description = "",
     this.trailing,
     this.menuItems,
+    this.color,
   });
 
   final User user;
   final String description;
   final Widget? trailing;
   final List<ContextMenuButton>? menuItems;
+  final Color? color;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final contextManager = ref.read(contextManagerProvider);
 
+    Color buttonColor = color ?? Colors.transparent;
+
     return Material(
-      color: context.colors.surface,
+      color: buttonColor,
       borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: Menus.userProfile(context, ref, user),
+      child: SoButton(
+        height: 70,
+        color: buttonColor,
+        width: double.infinity,
+        onPressed: Menus.userProfile(context, ref, user),
         onSecondaryTapDown: (details) {
+          final menuItems = this.menuItems ??
+              Menus.friendContext(context, ref, user, description);
 
-          if (menuItems == null) {
-            final menuItems = Menus.friendContext(context, ref, user, description);
-            showContextMenu(
-              context,
-              details.globalPosition,
-              items: menuItems,
-              ref,
-            );
-          }
-          else {
-            showContextMenu(
-              context,
-              details.globalPosition,
-              items: menuItems!,
-              ref,
-            );
-          }
-
+          showContextMenu(
+            context,
+            details.globalPosition,
+            items: menuItems!,
+            ref,
+          );
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
@@ -70,7 +64,7 @@ class FriendItem extends ConsumerWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        user.username,
+                        user.nickname != null ? user.nickname! : user.username,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                         style: Theme.of(context).textTheme.titleMedium,

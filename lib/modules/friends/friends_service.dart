@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,14 +9,13 @@ import 'package:sochat_client/modules/users/user.dart';
 import 'package:sochat_client/modules/common/auth_service.dart';
 import 'package:sochat_client/modules/keys/key_service.dart';
 import 'package:sochat_client/modules/websocket/web_socket_service.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 final friendsServiceProvider = StateNotifierProvider<FriendsService, FriendsState>(
-      (ref) => FriendsService(ref.read(webSocketProvider), ref.read(keyServiceProvider.notifier), ref.read(authServiceProvider), ref),);
+      (ref) => FriendsService(ref.read(webSocketProvider), ref.read(keyServiceProvider.notifier), ref.read(authServiceProvider), ref.read(currentUserProvider), ref),);
 
 final friendsListProvider = Provider<List<User>>((ref) {
   final friendships = ref.watch(friendsServiceProvider).friendships;
-  final currentUser = ref.watch(authServiceProvider).currentUser;
+  final currentUser = ref.watch(currentUserProvider);
 
   return friendships.values
       .where((r) => r.status == FriendshipStatus.ACCEPTED)
@@ -31,7 +31,7 @@ final friendsListProvider = Provider<List<User>>((ref) {
 
 final blockedListProvider = Provider<List<User>>((ref) {
   final friendships = ref.watch(friendsServiceProvider).friendships;
-  final currentUser = ref.watch(authServiceProvider).currentUser;
+  final currentUser = ref.watch(currentUserProvider);
 
   return friendships.values
       .where((r) => r.status == FriendshipStatus.BLOCKED)
@@ -41,7 +41,7 @@ final blockedListProvider = Provider<List<User>>((ref) {
 
 final outgoingRequestsProvider = Provider<List<User>>((ref) {
   final friendships = ref.watch(friendsServiceProvider).friendships;
-  final currentUser = ref.watch(authServiceProvider).currentUser;
+  final currentUser = ref.watch(currentUserProvider);
 
   return friendships.values
       .where((f) => f.isOutgoing(currentUser!.id))
@@ -51,7 +51,7 @@ final outgoingRequestsProvider = Provider<List<User>>((ref) {
 
 final incomingRequestsProvider = Provider<List<User>>((ref) {
   final friendships = ref.watch(friendsServiceProvider).friendships;
-  final currentUser = ref.watch(authServiceProvider).currentUser;
+  final currentUser = ref.watch(currentUserProvider);
 
   return friendships.values
       .where((f) => f.isIncoming(currentUser!.id))
@@ -84,10 +84,13 @@ class FriendsService extends StateNotifier<FriendsState>{
   final WebSocketService _webSocket;
   final KeyService _keyService;
   final AuthService _authService;
+  final User? currentUser;
 
   Ref ref;
+  StreamSubscription? _subscription;
 
-  FriendsService(this._webSocket, this._keyService, this._authService, this.ref)
+
+  FriendsService(this._webSocket, this._keyService, this._authService, this.currentUser, this.ref)
       : super(FriendsState(friendships: {})) {
     startListen();
   }
@@ -96,7 +99,7 @@ class FriendsService extends StateNotifier<FriendsState>{
       state.friendships;
 
   void startListen(){
-    _webSocket.friendsMessages.listen((message) {
+    _subscription =  _webSocket.friendsMessages.listen((message) {
       switch(message.type) {
         case ("friend_request"):
           {
@@ -123,6 +126,12 @@ class FriendsService extends StateNotifier<FriendsState>{
     });
   }
 
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
   void remove(String username) {
     final newMap = {...friendships};
 
@@ -138,7 +147,7 @@ class FriendsService extends StateNotifier<FriendsState>{
   }
 
   void addUpdate(Friendship friendship){
-    final key = friendship.user.id == _authService.currentUser?.id
+    final key = friendship.user.id == currentUser?.id
         ? friendship.friend.username
         : friendship.user.username;
 
@@ -153,14 +162,17 @@ class FriendsService extends StateNotifier<FriendsState>{
   Future<void> getRelativesList() async {
     MessagePacket message = MessagePacket(type: "relatives_list", payload: {});
     MessagePacket request = await _webSocket.sendRequest(message);
-
-    List<dynamic> friendshipList = jsonDecode(request.payload["friendship_list"] as String);
+    List<dynamic> friendshipList = jsonDecode(request.payload["friendship_list"]);
     for (var f in friendshipList) {
       final user = f['user'];
       final friend = f['friend'];
       final status = f['status'];
-      Friendship friendship = Friendship(user: User(id: user["id"], username: user["username"]),
-          friend: User(id: friend["id"], username: friend["username"]), status: FriendshipStatus.values.byName(status));
+
+      final friendName = friend["username"].isNotEmpty ? friend["username"] : "Null";
+      final myName = user["username"].isNotEmpty ? user["username"] : "Null";
+
+      Friendship friendship = Friendship(user: User(id: user["id"], nickname: user["nickname"], username: myName, x25519PublicKey: user["x25519PublicKey"]),
+          friend: User(id: friend["id"], nickname: friend["nickname"], username: friendName, x25519PublicKey: friend["x25519PublicKey"]), status: FriendshipStatus.values.byName(status));
       addUpdate(friendship);
     }
   }
@@ -214,8 +226,8 @@ class FriendsService extends StateNotifier<FriendsState>{
     var userMap = friendshipMap["user"] as Map<String, dynamic>;
     var friendMap = friendshipMap["friend"] as Map<String, dynamic>;
 
-    Friendship friendship = Friendship(user: User(id: userMap["id"], username: userMap["username"]),
-        friend: User(id: friendMap["id"], username: friendMap["username"]),
+    Friendship friendship = Friendship(user: User(id: userMap["id"], nickname: userMap["nickname"], username: userMap["username"], x25519PublicKey: userMap["x25519PublicKey"]),
+        friend: User(id: friendMap["id"], nickname: friendMap["nickname"], username: friendMap["username"], x25519PublicKey: friendMap["x25519PublicKey"]),
         status: FriendshipStatus.PENDING);
 
     addUpdate(friendship);

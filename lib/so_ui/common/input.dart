@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sochat_client/extenstions/hex_color.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 
 class SoCommonInput extends ConsumerWidget {
@@ -11,10 +10,16 @@ class SoCommonInput extends ConsumerWidget {
   Border? border;
   Color? color;
   BorderRadius? borderRadius;
+  double? width;
+  double? height;
+  int? maxLength;
+  int? maxLines;
+  ValueChanged<String>? onChanged = (text) {};
 
   TextEditingController? textEditingController;
 
-  SoCommonInput({super.key, this.textStyle, this.decoration, this.border, this.color, this.borderRadius, this.textEditingController});
+  SoCommonInput({super.key, this.textStyle, this.decoration, this.border, this.color,
+    this.borderRadius, this.width, this.height, this.maxLength, this.maxLines, this.onChanged, this.textEditingController});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,6 +30,8 @@ class SoCommonInput extends ConsumerWidget {
     );
 
     return Container(
+        width: width,
+        height: height,
         decoration: BoxDecoration(
           border: border ?? Border(
             top: BorderSide.none,
@@ -39,6 +46,9 @@ class SoCommonInput extends ConsumerWidget {
           borderRadius: borderRadius ?? BorderRadius.circular(10),
         ),
         child: TextField(
+          onChanged: onChanged,
+          maxLines: maxLines,
+          maxLength: maxLength,
             controller: textEditingController,
             keyboardType: TextInputType.multiline,
             style: Theme.of(context).textTheme.bodyMedium,
