@@ -56,9 +56,6 @@ class KeysList extends ConsumerWidget  {
                   Text("Keychain", style: Theme.of(context).textTheme.labelSmall,),
                   Row(
                     children: [
-                      SoButton(height: 30, width: 30, onPressed: () async {
-                        await ref.watch(keyServiceProvider.notifier).generateProfile();
-                      },child: Icon(Icons.add, color: context.colors.textPrimary, size: 25),),
                       SoButton(height: 30, width: 30, onPressed: Menus.keyEditorWindow(context, selectedKey, ref),child: Icon(Icons.edit, color: context.colors.textPrimary, size: 25),),
                       SoButton(height: 30, width: 30, onPressed: () async {
                         await Clipboard.setData(ClipboardData(text: keyServiceNotifier.toJson(selectedKey)));

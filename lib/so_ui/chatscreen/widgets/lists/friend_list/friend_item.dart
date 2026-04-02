@@ -44,7 +44,7 @@ class FriendItem extends ConsumerWidget {
 
           showContextMenu(
             context,
-            details.globalPosition,
+            details,
             items: menuItems!,
             ref,
           );

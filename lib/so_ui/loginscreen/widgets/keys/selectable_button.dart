@@ -5,120 +5,126 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/context/context_menu.dart';
 import 'package:sochat_client/context/context_menu_button.dart';
+import 'package:sochat_client/so_ui/common/so_button.dart';
 
 class SelectableButton extends ConsumerStatefulWidget {
-
-  SelectableButton(this.text, this.secondaryText,
-      {super.key, required this.size, this.onPressed,
-        this.onSecondaryTap, required this.isSelected, required this.menuItems});
+  const SelectableButton(
+      this.text,
+      this.secondaryText, {
+        super.key,
+        required this.size,
+        this.onPressed,
+        this.onSecondaryTap,
+        required this.isSelected,
+        required this.menuItems,
+      });
 
   final String text;
   final String secondaryText;
-  double size;
+  final double size;
   final VoidCallback? onPressed;
   final void Function(TapDownDetails)? onSecondaryTap;
+  final List<ContextMenuButton> menuItems;
+  final bool isSelected;
 
-  List<ContextMenuButton> menuItems;
+  @override
+  ConsumerState<SelectableButton> createState() =>
+      _SelectableButtonState();
+}
 
-  bool isSelected = false;
+class _SelectableButtonState extends ConsumerState<SelectableButton> {
   bool isHovered = false;
-
   final GlobalKey _buttonKey = GlobalKey();
 
   @override
-  ConsumerState<SelectableButton> createState() => _SelectableButtonState();
-
-}
-class _SelectableButtonState extends ConsumerState<SelectableButton> {
-  bool isHovered = false;
-
-  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: widget.isSelected ? context.colors.positive : context.colors.foreground,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+    return SoButton(
+      height: 40,
+      width: double.infinity,
+      
+      onPressed: widget.onPressed,
+      //borderColor: context.colors.outline,
 
-        onSecondaryTapDown: widget.onSecondaryTap,
+      onSecondaryTapDown: (pos) {
+        widget.onSecondaryTap?.call(
+          TapDownDetails(globalPosition: pos),
+        );
+      },
 
+      color: widget.isSelected
+          ? context.colors.positive
+          : context.colors.foreground,
 
-        onHover: (hovering) {
-          setState(() {
-            isHovered = hovering;
-          });
+      child: MouseRegion(
+        onEnter: (_) => setState(() => isHovered = true),
+        onExit: (_) => setState(() => isHovered = false),
 
-        },
-
-        onTap: widget.onPressed,
         child: Container(
-          height: 40,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: context.colors.outline,
-                width: 1,
-              ),
-            ),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          alignment: Alignment.centerLeft,
-          child: Row(
-            spacing: 16,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              widget.isSelected ? Text(widget.text, style: TextStyle(color: Colors.white),)
-              : Text(widget.text, style: TextStyle(color: context.colors.textPrimary),
-                  overflow: TextOverflow.ellipsis,
-                  softWrap: false,
-                  textAlign: TextAlign.right),
+          key: _buttonKey,
+          padding: EdgeInsets.all(8),
 
+          child: Row(
+            children: [
+              /// TEXT
               Expanded(
-                child: widget.isSelected ? Text(
-                  widget.secondaryText,
-                  style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                child: Text(
+                  widget.text,
+                  style: TextStyle(
+                    color: widget.isSelected
+                        ? Colors.white
+                        : context.colors.textPrimary,
+                  ),
                   overflow: TextOverflow.ellipsis,
-                  softWrap: false,
-                  textAlign: TextAlign.right,)
-                    : Text(
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              /// SECONDARY TEXT
+              Expanded(
+                child: Text(
                   widget.secondaryText,
-                  style: TextStyle(color: context.colors.textSecondary),
+                  style: TextStyle(
+                    color: widget.isSelected
+                        ? Colors.white.withOpacity(0.5)
+                        : context.colors.textSecondary,
+                  ),
                   overflow: TextOverflow.ellipsis,
-                  softWrap: false,
                   textAlign: TextAlign.right,
                 ),
               ),
-              Stack(
-                children: [
-                  IgnorePointer(
-                    ignoring: false,
-                    child: isHovered ? Material(
-                      borderRadius: BorderRadius.circular(10),
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        key: widget._buttonKey,
-                        onTap: () {
-                          final RenderBox box =
-                          widget._buttonKey.currentContext!.findRenderObject() as RenderBox;
-                          Offset globalPosition = box.localToGlobal(Offset.zero);
-                          final Size size = box.size;
 
-                          final Offset menuPosition = Offset(
-                            globalPosition.dx + size.width/22 + 5 ,
-                            globalPosition.dy + size.height + 11,
-                          );
+              /// MENU BUTTON
+              if (isHovered)
+                GestureDetector(
+                  onTap: () {
+                    final box = _buttonKey.currentContext!
+                        .findRenderObject() as RenderBox;
 
-                          showContextMenu(context, menuPosition, items: widget.menuItems, ref);
-                        },
-                        child: widget.isSelected ? Icon(Icons.more_vert, color: Colors.white.withOpacity(0.5),)
-                            : Icon(Icons.more_vert, color: context.colors.textSecondary,),
-                      ),
-                    ) : SizedBox(width: 24,) ,
-                  )
-                ],
-              )
+                    final global = box.localToGlobal(Offset.zero);
+                    final size = box.size;
+
+                    final position = Offset(
+                      global.dx + size.width - 30,
+                      global.dy + size.height,
+                    );
+
+                    showContextMenu(
+                      context,
+                      position,
+                      items: widget.menuItems,
+                      ref,
+                    );
+                  },
+                  child: Icon(
+                    Icons.more_vert,
+                    color: widget.isSelected
+                        ? Colors.white.withOpacity(0.5)
+                        : context.colors.textSecondary,
+                  ),
+                )
+              else
+                const SizedBox(width: 24),
             ],
           ),
         ),

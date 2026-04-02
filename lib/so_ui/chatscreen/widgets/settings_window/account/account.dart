@@ -10,7 +10,9 @@ import 'package:sochat_client/so_ux/settings_controller.dart';
 
 class Account extends ConsumerStatefulWidget {
 
-  Account({super.key});
+  const Account({super.key, this.textInputColor});
+
+  final Color? textInputColor;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => AccountState();
@@ -83,7 +85,7 @@ class AccountState extends ConsumerState<Account> {
                               color: context.colors.textSecondary,
                             )),
                             SoCommonInput(
-                              color: context.colors.surface,
+                              color: widget.textInputColor ?? context.colors.surface,
                               textStyle: Theme.of(context).textTheme.bodyMedium,
                               decoration: InputDecoration(hintText: "Nickname",
                                 hintStyle: Theme.of(context).textTheme.labelMedium,
@@ -104,7 +106,7 @@ class AccountState extends ConsumerState<Account> {
                               color: context.colors.textSecondary,
                             )),
                             SoCommonInput(
-                              color: context.colors.surface,
+                              color: widget.textInputColor ?? context.colors.surface,
                               textStyle: Theme.of(context).textTheme.bodyMedium,
                               decoration: InputDecoration(hintText: "Username",
                                 hintStyle: Theme.of(context).textTheme.labelMedium,
@@ -126,7 +128,7 @@ class AccountState extends ConsumerState<Account> {
                             )),
                             SoCommonInput(
                               height: 200,
-                              color: context.colors.surface,
+                              color: widget.textInputColor ?? context.colors.surface,
                               maxLines: null,
                               textStyle: Theme.of(context).textTheme.bodyMedium,
                               decoration: InputDecoration(hintText: "Type something like \"I love drinking coke\"",

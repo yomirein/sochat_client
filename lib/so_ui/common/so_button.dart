@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
@@ -6,8 +8,8 @@ class SoButton extends ConsumerWidget {
   const SoButton({
     super.key,
     required this.child,
-    required this.height,
-    required this.width,
+    this.height,
+    this.width,
     this.onPressed,
     this.onSecondaryTapDown,
     this.color,
@@ -16,17 +18,19 @@ class SoButton extends ConsumerWidget {
   });
 
   final Widget child;
-  final double height;
-  final double width;
+  final double? height;
+  final double? width;
   final VoidCallback? onPressed;
-  final void Function(TapDownDetails)? onSecondaryTapDown;
+  final ValueChanged<Offset>? onSecondaryTapDown;
   final Color? color;
   final Color? borderColor;
   final Alignment? alignment;
 
+  bool get isMobile =>
+      Platform.isIOS || Platform.isFuchsia || Platform.isAndroid;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     return Container(
       height: height,
       width: width,
@@ -40,27 +44,25 @@ class SoButton extends ConsumerWidget {
       child: Material(
         borderRadius: BorderRadius.circular(10),
         color: color ?? context.colors.foreground,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: onPressed,
-          onSecondaryTapDown: onSecondaryTapDown,
-          child: Align(
-            alignment: alignment ?? Alignment.center,
-            child: child,
+        child: GestureDetector(
+          onLongPressStart: (details) {
+            if (!isMobile) { return; }
+            onSecondaryTapDown?.call(details.globalPosition);
+          },
+
+          onSecondaryTapDown: (details) {
+            onSecondaryTapDown?.call(details.globalPosition);
+          },
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: onPressed,
+            child: Align(
+              alignment: alignment ?? Alignment.center,
+              child: child,
+            ),
           ),
         ),
       ),
     );
   }
 }
-/*
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(2
-            alignment: alignment ?? Alignment.center,
-            splashFactory: NoSplash.splashFactory,
-            backgroundColor: buttonColor,
-          ),
-          child: child,
-        ),
-*/

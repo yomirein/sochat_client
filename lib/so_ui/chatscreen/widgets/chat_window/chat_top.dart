@@ -7,7 +7,10 @@ import 'package:sochat_client/so_ui/common/so_button.dart';
 import 'package:sochat_client/so_ux/chat_controller.dart';
 
 class ChatTop extends ConsumerWidget {
-  const ChatTop({super.key});
+
+  final double borderRadius;
+
+  const ChatTop({super.key, this.borderRadius = 10});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +31,7 @@ class ChatTop extends ConsumerWidget {
           ),
         ),
         color: context.colors.foreground,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),
       ),
 
       child: Padding(
@@ -39,6 +42,8 @@ class ChatTop extends ConsumerWidget {
             Row(
               spacing: 10,
               children: [
+                SoButton(height: 30, width: 30,  color: Colors.transparent, onPressed: () {ref.read(selectedChatProvider.notifier).state = null;},
+                  child: Icon(Icons.arrow_back, color: context.colors.textPrimary, size: 25),),
                 CircleAvatar(radius: 20, child: Text(chatList.firstWhere((chat) => chat.id == selectedChat!.id).title[0])),
                 Text(chatList.firstWhere((chat) => chat.id == selectedChat!.id).title),
                 chatList.firstWhere((chat) => chat.id == selectedChat!.id).type == ChatType.GROUP_SECURE ? Icon(Icons.enhanced_encryption, color: context.colors.textSecondary, size: 20,)

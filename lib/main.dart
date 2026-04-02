@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:sochat_client/context/notifications/notifications_manager.dart';
 import 'package:sochat_client/extenstions/no_transitions.dart';
+import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/so_ui/notifications/so_notification.dart';
 import 'package:sochat_client/so_ui/chatscreen/chat_screen.dart';
 import 'package:sochat_client/so_ui/notifications/notifications_overlay.dart';
@@ -25,11 +27,26 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
 
-  await windowManager.ensureInitialized();
+
 
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    WindowManager.instance.setMinimumSize(const Size(850, 600));
+    await windowManager.ensureInitialized();
+
+    //WindowManager.instance.setMinimumSize(const Size(850, 600));
   }
+
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+      statusBarColor: Colors.transparent,
+    ),
+  );
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   runApp(
     ValueListenableBuilder(
@@ -110,131 +127,143 @@ class SoChat extends ConsumerWidget {
     final colors = ref.watch(settingsControllerProvider.notifier).getTheme(ref.watch(selectedThemeProvider))
         .whereType<AppColors>()
         .first;
-    
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      builder: (context, child) {
-        return Stack(
-          children: [
-            child!,
-            NotificationsOverlay(),
-          ],
-        );
-      },
-      theme: ThemeData(
-        extensions: ref.watch(settingsControllerProvider.notifier).getTheme(ref.watch(selectedThemeProvider)),
-        useMaterial3: false,
-        fontFamily: 'Inter',
 
-        primaryColor: colors.primary,
-        primaryColorDark: colors.primary,
-        primaryColorLight: colors.primary,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarContrastEnforced: true,
+      ),
+        child: Container(
+          color: colors.surface,
+          child: SafeArea(
+            child: MaterialApp(
+              debugShowCheckedModeBanner: false,
+              builder: (context, child) {
+                return Stack(
+                  children: [
+                    child!,
+                    NotificationsOverlay(),
+                  ],
+                );
+              },
+              theme: ThemeData(
+                extensions: ref.watch(settingsControllerProvider.notifier).getTheme(ref.watch(selectedThemeProvider)),
+                useMaterial3: false,
+                fontFamily: 'Inter',
 
-        hoverColor: colors.contrastColor.withOpacity(0.05),
-        splashFactory: NoSplash.splashFactory,
-        highlightColor: colors.contrastColor.withOpacity(0.10),
+                primaryColor: colors.primary,
+                primaryColorDark: colors.primary,
+                primaryColorLight: colors.primary,
 
-        colorScheme: ColorScheme.light(
-          primary: colors.primary,
-        ),
+                hoverColor: colors.contrastColor.withOpacity(0.05),
+                splashFactory: NoSplash.splashFactory,
+                highlightColor: colors.contrastColor.withOpacity(0.10),
 
-        textTheme: TextTheme(
-            titleLarge: TextStyle(
-                fontSize: 18,
-                color: colors.textPrimary,
-                fontWeight: FontWeight.w500,
+                colorScheme: ColorScheme.light(
+                  primary: colors.primary,
+                ),
+
+                textTheme: TextTheme(
+                    titleLarge: TextStyle(
+                        fontSize: 18,
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w500,
+                    ),
+
+                    bodyLarge: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: colors.textPrimary,
+                    ),
+
+                    labelLarge: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: colors.textSecondary,
+                    ),
+
+                    titleMedium: TextStyle(
+                        fontSize: 15,
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w500,
+                    ),
+
+                    bodyMedium: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: colors.textPrimary,
+                    ),
+
+                    labelMedium: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: colors.textSecondary,
+                    ),
+
+                    titleSmall: TextStyle(
+                        fontSize: 12,
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w500,
+
+                    ),
+
+                    bodySmall: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: colors.textPrimary,
+                    ),
+
+                    labelSmall: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: colors.textSecondary,
+                      letterSpacing: 0.1,
+                    )
+                ),
+
+                pageTransitionsTheme: PageTransitionsTheme(
+                  builders: {
+                    TargetPlatform.android: const NoTransitionsBuilder(),
+                    TargetPlatform.iOS: const NoTransitionsBuilder(),
+                    TargetPlatform.fuchsia: const NoTransitionsBuilder(),
+                    TargetPlatform.linux: const NoTransitionsBuilder(),
+                    TargetPlatform.macOS: const NoTransitionsBuilder(),
+                    TargetPlatform.windows: const NoTransitionsBuilder(),
+                  },
+                ),
+
+                iconTheme: IconThemeData(
+                  color: colors.textPrimary,
+                  size: 24,
+                ),
+
+                appBarTheme: AppBarTheme(
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                ),
+                scaffoldBackgroundColor: colors.background,
+
+
+
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: colors.foreground,
+                    shadowColor: Colors.transparent,
+                    alignment: Alignment.center,
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              title: 'SoChat',
+              home: const SoDesignPage(title: 'SoChat'),
+              themeMode: null,
             ),
-
-            bodyLarge: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w400,
-                color: colors.textPrimary,
-            ),
-
-            labelLarge: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w400,
-                color: colors.textSecondary,
-            ),
-
-            titleMedium: TextStyle(
-                fontSize: 15,
-                color: colors.textPrimary,
-                fontWeight: FontWeight.w500,
-            ),
-
-            bodyMedium: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w400,
-                color: colors.textPrimary,
-            ),
-
-            labelMedium: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w400,
-                color: colors.textSecondary,
-            ),
-
-            titleSmall: TextStyle(
-                fontSize: 12,
-                color: colors.textPrimary,
-                fontWeight: FontWeight.w500,
-
-            ),
-
-            bodySmall: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                color: colors.textPrimary,
-            ),
-
-            labelSmall: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                color: colors.textSecondary,
-              letterSpacing: 0.1,
-            )
-        ),
-
-        pageTransitionsTheme: PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: const NoTransitionsBuilder(),
-            TargetPlatform.iOS: const NoTransitionsBuilder(),
-            TargetPlatform.fuchsia: const NoTransitionsBuilder(),
-            TargetPlatform.linux: const NoTransitionsBuilder(),
-            TargetPlatform.macOS: const NoTransitionsBuilder(),
-            TargetPlatform.windows: const NoTransitionsBuilder(),
-          },
-        ),
-
-        iconTheme: IconThemeData(
-          color: colors.textPrimary,
-          size: 24,
-        ),
-        
-        appBarTheme: AppBarTheme(
-          elevation: 0,
-          shadowColor: Colors.transparent,
-        ),
-        scaffoldBackgroundColor: colors.background,
-
-
-
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            elevation: 0,
-            backgroundColor: colors.foreground,
-            shadowColor: Colors.transparent,
-            alignment: Alignment.center,
-            padding: EdgeInsets.zero,
           ),
         ),
-
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      title: 'SoChat',
-      home: const SoDesignPage(title: 'SoChat'),
-      themeMode: null,
     );
   }
 }
@@ -264,6 +293,8 @@ class _SoDesignPageState extends ConsumerState<SoDesignPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
+      extendBodyBehindAppBar: true,
       body: Center(
         child: Column(
           mainAxisAlignment: .center,
@@ -276,10 +307,10 @@ class _SoDesignPageState extends ConsumerState<SoDesignPage> {
             TextButton(onPressed: () {
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => ChatScreen()));
-            }, child: Text("Chat")),
+            }, child: Text("Chat (CAUTION: DO NOT USE), it will crash app")),
             TextButton(onPressed: () {
               notificationsManager.addUpdate(SoNotification(title: "youi", content: "nananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananana", icon: Icons.error_outline));
-            }, child: Text("Notification add")),
+            }, child: Text("Notification test")),
           ],
         ),
       ),

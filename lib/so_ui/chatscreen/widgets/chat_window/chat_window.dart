@@ -6,10 +6,24 @@ import 'package:sochat_client/so_ui/chatscreen/widgets/chat_window/chat_top.dart
 import 'package:sochat_client/so_ui/chatscreen/widgets/chat_window/input_field.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sochat_client/so_ui/common/base_panel.dart';
 import 'package:sochat_client/so_ux/chat_controller.dart';
 
 class ChatWindow extends ConsumerStatefulWidget {
-  const ChatWindow({super.key});
+  ChatWindow({super.key,
+    this.backgroundColor,
+    this.topBorderRadius = 10,
+    this.borderRadius = 10,
+    this.messageInputPadding = const EdgeInsets.all(0),
+    this.borderColor,
+  });
+
+  final Color? borderColor;
+  final Color? backgroundColor;
+  final double? topBorderRadius;
+  final double? borderRadius;
+  final EdgeInsets? messageInputPadding;
+
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => ChatWindowState();
 }
@@ -67,39 +81,35 @@ class ChatWindowState extends ConsumerState<ChatWindow>{
         }
     );
 
-    return Expanded(
+    return BasePanel(
       flex: 2,
+      borderRadius: widget.borderRadius!,
+      borderColor: widget.borderColor,
+      backgroundColor: widget.backgroundColor ?? context.colors.foreground,
       child: Focus(
         focusNode: chatFocusNode,
-        child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: context.colors.outline,
-                width: 1.0,
-              ),
-              color: context.colors.foreground,
-              borderRadius: BorderRadius.circular(10.0),
+        child: selectedChat != null
+            ? (isInCall
+            ? Column(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CallWindow(),
+          ],
+        )
+            : Column(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ChatTop(borderRadius: widget.topBorderRadius!),
+            MessageList(textFieldFocusNode),
+            Padding(
+              padding: widget.messageInputPadding!,
+              child: InputField(messageInputController, textFieldFocusNode),
             ),
-            child: selectedChat != null
-                ? (isInCall
-                ? Column(
-              mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                CallWindow()
-              ],
-            ): Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ChatTop(),
-                  Container(child: MessageList(textFieldFocusNode)),
-                  InputField(messageInputController, textFieldFocusNode)
-                ],
-              ),
-            )): Center()
-        ),
+          ],
+        ))
+            : const Center(),
       ),
     );
   }

@@ -18,6 +18,8 @@ class User {
     this.description
   });
 
+  String getDesc() => (description?.isNotEmpty == true) ? description! : "No description";
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
         id: json['id'],
@@ -27,6 +29,7 @@ class User {
         description: json['description']
     );
   }
+
 
   User copyWith({
     int? id,

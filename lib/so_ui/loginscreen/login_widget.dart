@@ -99,33 +99,6 @@ class LoginPageWidget extends ConsumerState<LoginWidget> {
                   setError("Unknown error: $e");
                 }
               }),
-              Row(
-                children: [
-                  LoginButton(text: "Kafka", color: context.colors.critical, onTap: () async {
-                    _usernameController.text = "kafka";
-                    ref.read(keyServiceProvider.notifier).parseEntry('{"profile1":{"ed25519publicKey":"WE6YkhFUBrteC+3Z5kXQ98HbR+OxDZEoglpDnGe58i4=","ed25519privateKey":"fPIX2aL/xfu3rDDV0FnVgvpPCiIjaJZ5C5UvTB+LjJk="}}');
-                    ref.read(selectedProfileProvider.notifier).state = keyService.profiles.length-1;
-                    loginController.login(context, _usernameController.text,
-                        ref.read(selectedProfileProvider), ref.read(selectedServerProvider), ref);
-
-                  }),
-                  LoginButton(text: "Silver", color: context.colors.critical, onTap: () {
-                    _usernameController.text = "silver";
-                    ref.read(keyServiceProvider.notifier).parseEntry('{"profile2":{"ed25519publicKey":"rIO/d0h1lLIiy0oUNhReQncJku8+jN8cLNVN1594hbg=","ed25519privateKey":"n50jTg/3yw69h53e5Q5e1yuRsfcMUxN4YPXFSvE8fu0="}}');
-                    ref.read(selectedProfileProvider.notifier).state = keyService.profiles.length - 1;
-                    loginController.login(context, _usernameController.text,
-                        ref.read(selectedProfileProvider), ref.read(selectedServerProvider), ref);
-                  }),
-                  LoginButton(text: "hero", color: context.colors.critical, onTap: () {
-                    _usernameController.text = "hero";
-                    ref.read(keyServiceProvider.notifier).parseEntry('{"profile2":{"ed25519publicKey":"d7u94NKVtO7vk/llLvMw+sLkTprYE1fIcq6WoDcgTQ4=","ed25519privateKey":"kcVXn/UNBwz0GcnT5idmFkL60FobvugpB5exYDQh6d0="}}');
-                    ref.read(selectedProfileProvider.notifier).state = keyService.profiles.length - 1;
-                    loginController.login(context, _usernameController.text,
-                        ref.read(selectedProfileProvider), ref.read(selectedServerProvider), ref);
-                  }),
-                ],
-              ),
-              
             ],
           )
         ],

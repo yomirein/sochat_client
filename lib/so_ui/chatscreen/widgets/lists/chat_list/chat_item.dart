@@ -9,6 +9,7 @@ import 'package:sochat_client/modules/chats/chat.dart';
 import 'package:sochat_client/modules/chats/chat_type.dart';
 import 'package:sochat_client/modules/common/auth_service.dart';
 import 'package:sochat_client/modules/messages/message.dart';
+import 'package:sochat_client/so_ui/common/so_button.dart';
 import 'package:sochat_client/so_ux/chat_controller.dart';
 
 class ChatItem extends ConsumerWidget {
@@ -46,12 +47,14 @@ class ChatItem extends ConsumerWidget {
       return Material(
         color: context.colors.surface,
         borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: onPressed,
+        child: SoButton(
+          height: 70,
+          color: Colors.transparent,
+          width: double.infinity,
+          onPressed: onPressed,
           onSecondaryTapDown: (details) {
             List<ContextMenuButton> menuItems = Menus.userContext(context, ref, chat, description, lastMessage?.id);
-            showContextMenu(context, details.globalPosition, items: menuItems, ref);
+            showContextMenu(context, details, items: menuItems, ref);
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
@@ -83,16 +86,31 @@ class ChatItem extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          Row(
-                            spacing: 4,
-                            children: [
-                              if (isRead != null && isRead!)
-                                Text("Read", style: Theme.of(context).textTheme.labelSmall)
-                              else
-                                Text("Unread", style: Theme.of(context).textTheme.labelSmall,),
-                              if (time != null)
-                                Text(time!, style: Theme.of(context).textTheme.labelSmall),
-                            ],
+                          Flexible(
+                            flex: 1,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              spacing: 4,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    (isRead != null && isRead!) ? "Read" : "Unread",
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: Theme.of(context).textTheme.labelSmall,
+                                  ),
+                                ),
+                                if (time != null)
+                                  Flexible(child: Text(
+                                    time!,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: Theme.of(context).textTheme.labelSmall,
+                                  ),
+                                  )
+                              ],
+                            ),
                           ),
                         ],
                       ),

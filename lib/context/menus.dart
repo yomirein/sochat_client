@@ -227,33 +227,38 @@ class Menus {
       showContextWindow(
         context,
         ref,
-        height: 200,
+        height: 220,
 
         child: Column(
-          spacing: 8,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            SoCommonInput(textEditingController: nameController, decoration: InputDecoration(
-              hintText: "Server name",
-            ),),
-            SoCommonInput(textEditingController: ipController, decoration: InputDecoration(
-              hintText: "Server ip",
-            ),),
+            Column(
+              spacing: 8,
+              children: [
+                SoCommonInput(textEditingController: nameController, decoration: InputDecoration(
+                  hintText: "Server name",
+                ),),
+                SoCommonInput(textEditingController: ipController, decoration: InputDecoration(
+                  hintText: "Server ip",
+                ),),
+              ],
+            ),
+
             Row(
-              spacing: 16,
+              spacing: 8,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SettingsButton(Icons.check, size: 40,
+                SoButton(width: 40, height: 40, borderColor: context.colors.outline,
                   onPressed: () {
                     ref.watch(keyServiceProvider.notifier).updateServerName(oldKey, nameController.text);
                     ref.watch(keyServiceProvider.notifier).updateServerIp(oldKey, ipController.text);
 
-                    ref.read(contextManagerProvider).hideMenu();
-                  },),
-                SettingsButton(Icons.close, size: 40,
+                    ref.read(contextManagerProvider).hideWindow();
+                  },child: Icon(Icons.check),),
+                SoButton(width: 40, height: 40, borderColor: context.colors.outline,
                   onPressed: () {
-                    ref.read(contextManagerProvider).hideMenu();
-                  },)
+                    ref.read(contextManagerProvider).hideWindow();
+                  },child: Icon(Icons.close),),
               ],
             ),
 
@@ -331,7 +336,7 @@ class Menus {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SoCommonInput(textEditingController: nameController, decoration: InputDecoration(
-              hintText: "Server name",
+              hintText: "Profile name",
             ),),
             Row(
               spacing: 16,
@@ -340,16 +345,14 @@ class Menus {
                 SettingsButton(Icons.check, size: 40,
                   onPressed: () {
                     ref.watch(keyServiceProvider.notifier).updateProfileName(oldKey, nameController.text);
-
-                    ref.read(contextManagerProvider).hideMenu();
+                    ref.read(contextManagerProvider).hideWindow();
                   },),
                 SettingsButton(Icons.close, size: 40,
                   onPressed: () {
-                    ref.read(contextManagerProvider).hideMenu();
+                    ref.read(contextManagerProvider).hideWindow();
                   },)
               ],
             ),
-
           ],
         ),
       );
@@ -759,7 +762,7 @@ class Menus {
         text: "${user.nickname} (${user.username})",
         leading: CircleAvatar(radius: 20, child: Text(user.nickname[0])),
         onTap: () { },
-        description: "No description",
+        description: user.getDesc()
       ),
       ContextMenuButton(
         text: "Log-out",

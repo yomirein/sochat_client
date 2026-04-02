@@ -4,13 +4,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/context/notifications/notifications_manager.dart';
+import 'package:sochat_client/modules/keys/key_service.dart';
 import 'package:sochat_client/modules/websocket/message_packet.dart';
 import 'package:sochat_client/so_ui/notifications/so_notification.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 final webSocketProvider = Provider<WebSocketService>((ref) {
-  final service = WebSocketService(ref);
+  final service = WebSocketService(ref, ref.read(keyServiceProvider.notifier));
 
   ref.onDispose(() {
     service.dispose();
@@ -39,8 +40,9 @@ class WebSocketService{
   final _pendingRequests = <String, Completer>{};
   Timer? _pingTimer;
   Ref _ref;
+  KeyService _keyService;
 
-  WebSocketService(this._ref);
+  WebSocketService(this._ref, this._keyService);
 
   void dispose() {
     _pingTimer?.cancel();
@@ -68,8 +70,11 @@ class WebSocketService{
   }
 
   Future<void> connect() async {
+
+    String webSocketIp = "ws${_keyService.servers.entries.toList()[_ref.read(selectedServerProvider)].value.substring(4)}/ws";
+
     channel = WebSocketChannel.connect(
-        Uri.parse('ws://localhost:8081/ws')
+        Uri.parse(webSocketIp)
     );
 
     await channel!.ready;

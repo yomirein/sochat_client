@@ -24,11 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final keyService = ref.read(keyServiceProvider.notifier);
     Future.microtask(() {
       keyService.generateProfile();
-      keyService.addServer("yom", "http://localhost:8081");
-      keyService.addServer("yomr", "http://localhoqedqst:8081");
-      keyService.addServer("yomra", "http://localhasdawqeost:8081");
-      keyService.addServer("yomasd", "http://localhoasdasdst:8081");
-
+      keyService.addServer("localhost", "http://localhost:8081");
     });
   }
 
@@ -42,7 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ref.watch(keyServiceProvider.notifier);
 
     return Scaffold(
-      body: Center(
+      body: Padding(padding: EdgeInsets.all(16), child: Center(
         child: SizedBox(
           width: 550,
           height: 350,
@@ -60,6 +56,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 }
