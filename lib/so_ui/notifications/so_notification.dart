@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/so_ui/common/so_button.dart';
 
-import '../../context/notifications/notifications_manager.dart';
+import '../../context/notifications/inapp_notifications_manager.dart';
 
 class SoNotification extends ConsumerWidget {
   String? title;
@@ -16,7 +16,7 @@ class SoNotification extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notificationManager = ref.watch(notificationsManagerProvider.notifier);
+    final notificationManager = ref.watch(inAppNotificationsManagerProvider.notifier);
 
     return SoButton(
       width: 370,
@@ -25,7 +25,7 @@ class SoNotification extends ConsumerWidget {
       color: context.colors.foreground,
       alignment: Alignment.topLeft,
       onPressed: () {
-        notificationManager.remove(ref.read(notificationsManagerProvider).notificationList.indexOf(this));
+        notificationManager.remove(ref.read(inAppNotificationsManagerProvider).notificationList.indexOf(this));
       },
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -59,7 +59,7 @@ class SoNotification extends ConsumerWidget {
                     child: Icon(Icons.copy, size: 20,),
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: "$title : $content"));
-                    notificationManager.remove(ref.read(notificationsManagerProvider).notificationList.indexOf(this));
+                    notificationManager.remove(ref.read(inAppNotificationsManagerProvider).notificationList.indexOf(this));
                   },
                 )
               ],

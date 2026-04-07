@@ -3,10 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:sochat_client/context/notifications/notifications_manager.dart';
+import 'package:sochat_client/context/notifications/inapp_notifications_manager.dart';
 import 'package:sochat_client/modules/chats/chat.dart';
 import 'package:sochat_client/modules/chats/chat_service.dart';
 import 'package:sochat_client/modules/chats/sender_key.dart';
+import 'package:sochat_client/modules/notifications/notifications_service.dart';
 import 'package:sochat_client/modules/users/user_service.dart';
 import 'package:sochat_client/modules/websocket/message_packet.dart';
 import 'package:sochat_client/modules/users/user.dart';
@@ -20,28 +21,25 @@ import 'message.dart';
 
 
 final messageServiceProvider = StateNotifierProvider<MessageService, MessagesState>(
-      (ref) => MessageService(ref.read(webSocketProvider), ref.read(keyServiceProvider.notifier), ref.read(authServiceProvider), ref.read(chatsServiceProvider.notifier), ref.read(userServiceProvider.notifier), ref),);
+      (ref) => MessageService(ref.read(webSocketProvider), ref.read(keyServiceProvider.notifier), ref.read(chatsServiceProvider.notifier), ref.read(userServiceProvider.notifier), ref.read(notificationsServiceProvider), ref),);
 
 
 
 class MessagesState {
-
   MessagesState();
-
-
 }
 
 class MessageService extends StateNotifier<MessagesState> {
   final WebSocketService _webSocket;
   final KeyService _keyService;
-  final AuthService _authService;
   final ChatService _chatService;
   final UserService _userService;
+  final NotificationsService _notificationsService;
 
   Ref ref;
   StreamSubscription? _subscription;
 
-  MessageService(this._webSocket, this._keyService, this._authService, this._chatService, this._userService, this.ref)
+  MessageService(this._webSocket, this._keyService, this._chatService, this._userService, this._notificationsService, this.ref)
       : super(MessagesState()) {
     startListen();
   }
@@ -156,6 +154,12 @@ class MessageService extends StateNotifier<MessagesState> {
       message = Message.fromJson(
           jsonDecode(requestPacket.payload["message"]), sender);
     }
+
+    print(requestPacket.payload["success"]);
+    if (requestPacket.payload["success"] != true && ref.read(selectedChatProvider) != null && ref.read(selectedChatProvider)!.id != message.chatId){
+      _notificationsService.show(message.id, "${message.sender.nickname} : ${ref.read(currentUserProvider)!.nickname}", message.content);
+    }
+
     addMessage(message);
 
   }

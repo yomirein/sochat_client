@@ -5,9 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:sochat_client/context/notifications/notifications_manager.dart';
+import 'package:sochat_client/context/notifications/inapp_notifications_manager.dart';
+import 'package:sochat_client/extenstions/desktop_window_listener.dart';
 import 'package:sochat_client/extenstions/no_transitions.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
+import 'package:sochat_client/modules/common/local_storage_service.dart';
 import 'package:sochat_client/so_ui/notifications/so_notification.dart';
 import 'package:sochat_client/so_ui/chatscreen/chat_screen.dart';
 import 'package:sochat_client/so_ui/notifications/notifications_overlay.dart';
@@ -18,7 +20,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/so_ui/themes/light/light_theme.dart';
 import 'package:sochat_client/so_ux/settings_controller.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:tray_manager/tray_manager.dart';
 
+import 'modules/keys/key_service.dart';
+import 'modules/notifications/notifications_service.dart';
 import 'modules/websocket/web_socket_service.dart';
 
 final containerHolder = ValueNotifier<ProviderContainer>(ProviderContainer());
@@ -31,6 +36,33 @@ void main() async {
 
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     await windowManager.ensureInitialized();
+    windowManager.setPreventClose(true);
+    windowManager.waitUntilReadyToShow().then((_) async {
+      windowManager.show();
+    });
+
+    windowManager.addListener(DesktopWindowListener());
+
+    await trayManager.setIcon(
+      Platform.isWindows ? 'assets/icons/tray_icon.ico' : 'assets/icons/tray_icon.png',
+    );
+    await trayManager.setToolTip('SoChat');
+
+    Menu menu = Menu(
+      items: [
+        MenuItem(
+          key: 'show',
+          label: 'Show',
+        ),
+        MenuItem.separator(),
+        MenuItem(
+          key: 'exit',
+          label: 'Quit SoChat',
+        ),
+      ],
+    );
+
+    await trayManager.setContextMenu(menu);
 
     //WindowManager.instance.setMinimumSize(const Size(850, 600));
   }
@@ -47,6 +79,8 @@ void main() async {
   );
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+
 
   runApp(
     ValueListenableBuilder(
@@ -124,6 +158,8 @@ class SoChat extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(notificationsServiceProvider);
+
     final colors = ref.watch(settingsControllerProvider.notifier).getTheme(ref.watch(selectedThemeProvider))
         .whereType<AppColors>()
         .first;
@@ -277,17 +313,62 @@ class SoDesignPage extends ConsumerStatefulWidget {
   ConsumerState<SoDesignPage> createState() => _SoDesignPageState();
 }
 
-class _SoDesignPageState extends ConsumerState<SoDesignPage> {
+class _SoDesignPageState extends ConsumerState<SoDesignPage> with TrayListener {
 
-  late final NotificationsManager notificationsManager;
+  late final InAppNotificationsManager notificationsManager;
+  late final LocalStorageService localStorageService;
+  late final KeyService keyService;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final notificationManager =
-      notificationsManager = ref.read(notificationsManagerProvider.notifier);
+      notificationsManager = ref.read(inAppNotificationsManagerProvider.notifier);
+      trayManager.addListener(this);
     });
+
+    ref.read(selectedProfileProvider);
+    ref.read(selectedServerProvider);
+    ref.read(keyServiceProvider);
+    ref.read(keyServiceProvider.notifier);
+
+    keyService = ref.read(keyServiceProvider.notifier);
+    localStorageService = ref.read(localStorageServiceProvider.notifier);
+    loadSettings();
+  }
+
+  void loadSettings() async {
+    if (await localStorageService.checkForContainingSettings()){
+      localStorageService.loadSettings();
+    }
+    else {
+      Future.microtask(() {
+        keyService.generateProfile();
+        keyService.addServer("localhost", "http://localhost:8080");
+      });
+    }
+  }
+
+  @override
+  void onTrayIconRightMouseDown() async {
+    await trayManager.popUpContextMenu();
+  }
+
+  @override
+  void onTrayIconMouseDown() async {
+    await windowManager.show();
+  }
+
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) async {
+    if (menuItem.key == 'show') {
+      await windowManager.show();
+      await windowManager.focus();
+      await windowManager.setSkipTaskbar(false);
+    } else if (menuItem.key == 'exit') {
+      exit(0);
+    }
   }
 
   @override

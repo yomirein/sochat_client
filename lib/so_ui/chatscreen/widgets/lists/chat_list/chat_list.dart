@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/context/menus.dart';
-import 'package:sochat_client/context/notifications/notifications_manager.dart';
+import 'package:sochat_client/context/notifications/inapp_notifications_manager.dart';
 import 'package:sochat_client/extenstions/hex_color.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/extenstions/utils.dart';

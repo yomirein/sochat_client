@@ -4,11 +4,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:sochat_client/context/notifications/notifications_manager.dart';
+import 'package:sochat_client/context/notifications/inapp_notifications_manager.dart';
 import 'package:sochat_client/modules/chats/chat.dart';
 import 'package:sochat_client/modules/chats/chat_service.dart';
 import 'package:sochat_client/modules/chats/participant.dart';
 import 'package:sochat_client/modules/common/auth_service.dart';
+import 'package:sochat_client/modules/common/local_storage_service.dart';
 import 'package:sochat_client/modules/friends/friends_service.dart';
 import 'package:sochat_client/modules/messages/message.dart';
 import 'package:sochat_client/modules/messages/message_service.dart';
@@ -48,9 +49,10 @@ class SettingsController extends StateNotifier<SettingsControllerState> {
   void changeTheme(){
     if (ref.read(selectedThemeProvider) == ThemeType.dark){
       ref.read(selectedThemeProvider.notifier).state = ThemeType.light;
+      ref.read(localStorageServiceProvider.notifier).saveSettings();
       return;
     }
     ref.read(selectedThemeProvider.notifier).state = ThemeType.dark;
-
+    ref.read(localStorageServiceProvider.notifier).saveSettings();
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
+import 'package:sochat_client/modules/common/local_storage_service.dart';
 import 'package:sochat_client/so_ui/common/so_button.dart';
 import 'package:sochat_client/so_ui/loginscreen/widgets/keys/keys_list.dart';
 import 'package:sochat_client/so_ui/loginscreen/widgets/keys/server_list.dart';
@@ -77,6 +78,7 @@ class KeySettings extends ConsumerWidget {
               width: 43,
               height: 43,
               onPressed: () {
+                ref.read(localStorageServiceProvider.notifier).saveSettings();
                 ref.read(settingsToggle.notifier).state =
                 !ref.read(settingsToggle);
               },

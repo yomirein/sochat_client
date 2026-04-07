@@ -141,7 +141,7 @@ class MessageListState extends ConsumerState<MessageList>{
                                   spacing: 4,
                                   children: [
                                     Text(
-                                      message.sender.username,
+                                      message.sender.nickname,
                                       overflow: TextOverflow.ellipsis,
                                       style: Theme.of(context).textTheme.titleMedium,
                                     ),

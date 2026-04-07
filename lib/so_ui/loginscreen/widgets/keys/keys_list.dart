@@ -58,12 +58,12 @@ class KeysList extends ConsumerWidget  {
                     children: [
                       SoButton(height: 30, width: 30, onPressed: Menus.keyEditorWindow(context, selectedKey, ref),child: Icon(Icons.edit, color: context.colors.textPrimary, size: 25),),
                       SoButton(height: 30, width: 30, onPressed: () async {
-                        await Clipboard.setData(ClipboardData(text: keyServiceNotifier.toJson(selectedKey)));
+                        await Clipboard.setData(ClipboardData(text: keyServiceNotifier.profileToJson(selectedKey)));
                       },child: Icon(Icons.copy, color: context.colors.textPrimary, size: 25),),
                       SoButton(height: 30, width: 30, onPressed: () async {
                         final data = await Clipboard.getData(Clipboard.kTextPlain);
                         String text = data?.text ?? "";
-                        keyServiceNotifier.parseEntry(text);
+                        keyServiceNotifier.parseProfiles(text);
 
                       },child: Icon(Icons.paste, color: context.colors.textPrimary, size: 25),),
                     ],

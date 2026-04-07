@@ -15,15 +15,16 @@ What was done / Что было сделано:
 
 ## Libraries used in project / Библиотеки использованные в проекте
 
-| Library   | Version |
-| ---------- | ----- |
-| encrypt   | 5.0.3 |
-| flutter_riverpod | 3.2.1 |
-| http | 1.6.0 |
-| cryptography | 2.9.0 |
+| Library            | Version |
+|--------------------|-------|
+| encrypt            | 5.0.3 |
+| flutter_riverpod   | 3.2.1 |
+| http               | 1.6.0 |
+| cryptography       | 2.9.0 |
 | web_socket_channel | 3.0.3 |
-| scrollable_positioned_list | 0.3.8 |
-| window_manager | 0.5.1 |
+| flutter_secure_storage | 10.0.0 |
+| tray_manager | 0.5.2 |
+| flutter_local_notifications | 21.0.0 |
 
 Eng: I'm currently working on it as a college project, and it will continue if people show interest after first working release.
 

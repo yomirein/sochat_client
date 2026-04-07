@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sochat_client/context/notifications/notifications_manager.dart';
+import 'package:sochat_client/context/notifications/inapp_notifications_manager.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/so_ui/common/so_button.dart';
 
@@ -25,7 +25,7 @@ class _NotificationsOverlayState extends ConsumerState<NotificationsOverlay> {
       child: Consumer(
         builder: (context, ref, _) {
           final notifications =
-          ref.watch(notificationsManagerProvider);
+          ref.watch(inAppNotificationsManagerProvider);
 
           return Stack(
             children: [

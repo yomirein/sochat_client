@@ -5,10 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:sochat_client/context/context_manager.dart';
-import 'package:sochat_client/context/notifications/notifications_manager.dart';
+import 'package:sochat_client/context/notifications/inapp_notifications_manager.dart';
 import 'package:sochat_client/main.dart';
 import 'package:sochat_client/modules/chats/chat_service.dart';
 import 'package:sochat_client/modules/common/auth_service.dart';
+import 'package:sochat_client/modules/common/local_storage_service.dart';
 import 'package:sochat_client/modules/friends/friends_service.dart';
 import 'package:sochat_client/modules/keys/key_service.dart';
 import 'package:sochat_client/modules/messages/message_service.dart';
@@ -93,18 +94,21 @@ class LoginController extends StateNotifier<LoginControllerState> {
     webSocketService.connect();
 
     _authService.token = messagePacket.payload["token"];
+    await webSocketService.authenticate(messagePacket.payload["token"]);
 
-    webSocketService.authenticate(messagePacket.payload["token"]);
+    ref.read(localStorageServiceProvider.notifier).saveSession();
 
-    print(messagePacket.payload);
-    var user = jsonDecode(messagePacket.payload["user"]) as Map<
-        String,
-        dynamic>;
-    ref.read(currentUserProvider.notifier).state = User(id: user["id"],
-        nickname: user["nickname"],
-        username: user["username"],
-        description: user["description"],
-        x25519PublicKey: user["x25519PublicKey"]);
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => ChatScreen()));
+  }
+
+  Future<void> authenticateWithActiveSession(BuildContext context, WidgetRef ref) async{
+    final webSocketService = ref.read(webSocketProvider);
+    webSocketService.connect();
+
+    String token = await ref.read(localStorageServiceProvider.notifier).getSessionAndSetSelectedKeys();
+
+    await webSocketService.authenticate(token);
 
     Navigator.push(
         context, MaterialPageRoute(builder: (context) => ChatScreen()));
@@ -123,7 +127,8 @@ class LoginController extends StateNotifier<LoginControllerState> {
   Future<void> logout(BuildContext context) async {
     final oldContainer = containerHolder.value;
 
-    // Сначала навигация
+    oldContainer.read(localStorageServiceProvider.notifier).removeSession();
+
     await Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => UncontrolledProviderScope(

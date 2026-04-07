@@ -48,7 +48,7 @@ class ChatItem extends ConsumerWidget {
         color: context.colors.surface,
         borderRadius: BorderRadius.circular(10),
         child: SoButton(
-          height: 70,
+          height: 75,
           color: Colors.transparent,
           width: double.infinity,
           onPressed: onPressed,
@@ -64,6 +64,7 @@ class ChatItem extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(

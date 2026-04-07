@@ -11,7 +11,6 @@ import 'package:crypto/crypto.dart' hide Hmac;
 
 final keyServiceProvider = StateNotifierProvider<KeyService, KeyServiceState>((ref) {
   final service = KeyService(ref);
-  service.parseEntry('{"profile1":{"ed25519publicKey":"WE6YkhFUBrteC+3Z5kXQ98HbR+OxDZEoglpDnGe58i4=","ed25519privateKey":"fPIX2aL/xfu3rDDV0FnVgvpPCiIjaJZ5C5UvTB+LjJk="}}');
   return service;
 });
 
@@ -136,7 +135,7 @@ class KeyService extends StateNotifier<KeyServiceState> {
   }
 
 
-  String toJson(int index) {
+  String profileToJson(int index) {
     final entry = profiles.entries.elementAt(index);
 
     final map = {
@@ -149,11 +148,23 @@ class KeyService extends StateNotifier<KeyServiceState> {
     return jsonEncode(map);
   }
 
-  void parseEntry(String jsonString) async {
+  String serverToJson(int index) {
+    final entry = servers.entries.elementAt(index);
+
+    final map = {
+      entry.key: {
+        "ip": entry.value,
+      }
+    };
+
+    return jsonEncode(map);
+  }
+
+  void parseProfiles(String jsonString) async {
     final Map<String, dynamic> decoded = jsonDecode(jsonString);
 
     if (decoded.isEmpty) {
-      throw Exception("JSON пустой");
+      throw Exception("JSON empty");
     }
     var firstKey = decoded.keys.first;
     final firstValue = decoded[firstKey] as Map<String, dynamic>;
@@ -175,6 +186,22 @@ class KeyService extends StateNotifier<KeyServiceState> {
     var profile = MapEntry(firstKey, keyP);
 
     addProfile(firstKey, profile.value);
+  }
+
+  void parseServers(String jsonString) async {
+    final Map<String, dynamic> decoded = jsonDecode(jsonString);
+
+    if (decoded.isEmpty) {
+      throw Exception("Server could not load from local storage");
+    }
+    var firstKey = decoded.keys.first;
+    final firstValue = decoded[firstKey]["ip"];
+
+    if (firstValue == null) {
+      throw Exception("Server could not load from local storage");
+    }
+
+    addServer(firstKey, firstValue);
   }
 
   Future<String> generateFingerprint() async {

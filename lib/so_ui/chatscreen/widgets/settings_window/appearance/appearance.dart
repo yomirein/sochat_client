@@ -15,6 +15,7 @@ class Appearance extends ConsumerWidget {
       children: [
         SoButton(
           onPressed: () {
+
             settingsController.changeTheme();
           },
           height: 80, width: 100,

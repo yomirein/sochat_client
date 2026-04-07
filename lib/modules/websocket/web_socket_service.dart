@@ -3,8 +3,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sochat_client/context/notifications/notifications_manager.dart';
+import 'package:sochat_client/context/notifications/inapp_notifications_manager.dart';
+import 'package:sochat_client/modules/common/auth_service.dart';
 import 'package:sochat_client/modules/keys/key_service.dart';
+import 'package:sochat_client/modules/users/user.dart';
 import 'package:sochat_client/modules/websocket/message_packet.dart';
 import 'package:sochat_client/so_ui/notifications/so_notification.dart';
 import 'package:web_socket_channel/status.dart' as status;
@@ -97,7 +99,7 @@ class WebSocketService{
       }
 
       if (messagg.payload["success"] == "false"){
-        _ref.read(notificationsManagerProvider.notifier).addUpdate(
+        _ref.read(inAppNotificationsManagerProvider.notifier).addUpdate(
           SoNotification(
             icon: Icons.error_outline,
             title: "Unhandled request Error",
@@ -194,15 +196,23 @@ class WebSocketService{
   }
 
 
-  void authenticate(String token) async {
+  Future<void> authenticate(String token) async {
     MessagePacket message = MessagePacket(type: "authenticate", payload: {
       "token": token,
     });
     MessagePacket request = await sendRequest(message);
-    _friendsController.add(request);
-    }
 
+    var user = jsonDecode(request.payload["user"]) as Map<String, dynamic>;
+    _ref.read(currentUserProvider.notifier).state = User(id: user["id"],
+        nickname: user["nickname"],
+        username: user["username"],
+        description: user["description"],
+        x25519PublicKey: user["x25519PublicKey"]);
+
+    _friendsController.add(request);
+  }
 }
+
 class RequestIdGenerator {
   int _counter = 0;
 
