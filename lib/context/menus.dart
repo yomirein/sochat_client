@@ -55,13 +55,13 @@ class Menus {
               children: [
                 SoButton(height: 30, width: 30, onPressed: () {
                   friendShipService.sendFriendRequest(usernameController.text);
-                },child: Icon(Icons.send), color: context.colors.caution),
+                }, color: context.colors.caution, child: Icon(Icons.send)),
                 SoButton(height: 30, width: 30, onPressed: () {
                   friendShipService.getRelativesList();
-                },child: Icon(Icons.smart_button), color: context.colors.caution),
+                }, color: context.colors.caution, child: Icon(Icons.smart_button)),
                 SoButton(height: 30, width: 30, onPressed: () {
                   chatService.getChatList();
-                },child: Icon(Icons.error), color: context.colors.caution,),
+                }, color: context.colors.caution,child: Icon(Icons.error),),
               ],
             ),
 
