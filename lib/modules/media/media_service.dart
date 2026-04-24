@@ -1,8 +1,10 @@
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:sochat_client/modules/keys/key_service.dart';
 
 final mediaServiceProvider = Provider<MediaService>((ref) {
@@ -15,13 +17,26 @@ class MediaService {
   final KeyService _keyService;
 
   MediaService(this._keyService);
+  
+  Future<void> uploadImage(String ip) async{
+    var url = Uri.parse((ip + '/media').toString());
+    var request = await http.MultipartRequest("POST", url);
 
-  Image decodeImageFromBytes(String base64String) {
-    return Image.memory(jsonDecode(base64String));
-  }
+    request.fields['description'] = 'test';
 
-  void resolveImage(String mediaId){
-    
+    var multipartFile = await http.MultipartFile.fromPath(
+      'photo', "C:\\portapps\\sochat_client\\test.png"
+    );
+    request.files.add(multipartFile);
+
+    var response = await request.send();
+
+    if (response.statusCode == 200) {
+      print('Загружено!');
+    } else {
+      print('Ошибка: ${response.statusCode}');
+    }
+
   }
 
 }

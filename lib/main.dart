@@ -11,6 +11,7 @@ import 'package:sochat_client/extenstions/desktop_window_listener.dart';
 import 'package:sochat_client/extenstions/no_transitions.dart';
 import 'package:sochat_client/extenstions/theme_getter.dart';
 import 'package:sochat_client/modules/common/local_storage_service.dart';
+import 'package:sochat_client/modules/media/media_service.dart';
 import 'package:sochat_client/so_ui/notifications/so_notification.dart';
 import 'package:sochat_client/so_ui/chatscreen/chat_screen.dart';
 import 'package:sochat_client/so_ui/notifications/notifications_overlay.dart';
@@ -374,6 +375,9 @@ class _SoDesignPageState extends ConsumerState<SoDesignPage> with TrayListener {
 
   @override
   Widget build(BuildContext context) {
+
+    final mediaService = ref.watch(mediaServiceProvider);
+
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
@@ -393,6 +397,11 @@ class _SoDesignPageState extends ConsumerState<SoDesignPage> with TrayListener {
             TextButton(onPressed: () {
               notificationsManager.addUpdate(SoNotification(title: "youi", content: "nananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananananana", icon: Icons.error_outline));
             }, child: Text("Notification test")),
+
+            TextButton(onPressed: () {
+              mediaService.uploadImage("http://localhost:8081");
+            }, child: Text("Test Media Upload")),
+
           ],
         ),
       ),
