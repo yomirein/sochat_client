@@ -18,8 +18,8 @@ import 'package:sochat_client/so_ui/loginscreen/login_screen.dart';
 import 'package:sochat_client/so_ui/themes/colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sochat_client/so_ux/settings_controller.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'modules/keys/key_service.dart';
 import 'modules/notifications/notifications_service.dart';
@@ -47,7 +47,9 @@ void main() async {
     await trayManager.setIcon(
       'assets/icon/icon-nobg.ico',
     );
-    await trayManager.setToolTip('SoChat');
+    if (!Platform.isLinux) {
+      await trayManager.setToolTip('SoChat');
+    }
 
     Menu menu = Menu(
       items: [
